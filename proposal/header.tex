@@ -1,0 +1,71 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LaTeX Imports
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{amsfonts}                                                   % Math fonts
+\usepackage{amsmath}                                                    % Math formatting
+\usepackage{amssymb}                                                    % Math formatting
+\usepackage{amsthm}                                                     % Math Theorems
+%\usepackage{arydshln}                                                   % Dashed hlines
+\usepackage{attachfile}                                                 % AttachFiles
+\usepackage{cancel}                                                     % Cancelled math
+\usepackage{caption}                                                    % Figure captioning
+\usepackage{color}                                                      % Nice Colors
+\usepackage[at]{easylist}                                        % Easy lists
+\usepackage{fancyhdr}                                                   % Fancy Header
+\usepackage[T1]{fontenc}                                                % Specific font-encoding
+\usepackage[margin=1.5in, marginparwidth=2cm, marginparsep=2cm]{geometry} % Margins
+\usepackage{graphicx}                                                   % Include images
+\usepackage{hyperref}                                                   % Referencing
+\usepackage[none]{hyphenat}                                             % Don't allow hyphenation
+\usepackage{lipsum}                                                     % Lorem Ipsum Dummy Text
+\usepackage{listings}                                                   % Code display
+\usepackage{marginnote}                                                 % Notes in the margin
+\usepackage{microtype}                                                  % Niceness
+\usepackage{multirow}                                                   % Multirow tables
+\usepackage[framemethod=tikz]{mdframed}                                 % background color
+\usepackage{pdfpages}                                                   % Include pdfs
+\usepackage{pgfplots}                                                   % Create Pictures
+\usepackage{rotating}                                                   % Figure rotation
+\usepackage{setspace}                                                   % Allow double spacing
+%\usepackage{subcaption}                                                 % Figure captioning
+\usepackage{subfig}                                                 % Figure captioning
+%\usepackage{tocloft}                                                    % List of Equations
+\usepackage{longtable}                                                  % Huge Tables
+\usepackage{supertabular}
+\usepackage{float}
+\setcounter{LTchunksize}{50}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Package Setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\hypersetup{%                                                           % Setup linking
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    filecolor=black,
+    urlcolor=black,
+}
+\RequirePackage[l2tabu, orthodox]{nag}                                  % Nag about bad syntax
+\renewcommand*\thesection{\arabic{section}}                             % Reset numbering
+\renewcommand{\footrulewidth}{0.4pt}                                    % Footer hline
+\setcounter{secnumdepth}{3}                                             % Include subsubsections in numbering
+\setcounter{tocdepth}{3}                                                % Include subsubsections in toc
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Custom commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\nvec}[1]{\left\langle #1 \right\rangle}                    %  Easy to use vector
+\newcommand{\inprod}[2]{\left\langle \vec{#1}, \vec{#2} \right\rangle}  %  Easy to use inner product
+\newcommand{\norm}[1]{\lvert \lvert \vec{#1} \rvert \rvert}             %  Easy to use norm
+\newcommand{\ma}[0]{\mathbf{A}}                                         %  Easy to use vector
+\newcommand{\mb}[0]{\mathbf{B}}                                         %  Easy to use vector
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}                       %  Easy to use abs
+\newcommand{\pren}[1]{\left( #1 \right)}                                %  Big parens
+\newcommand{\Var}[0]{\text{Var}}                                %  Variance
+\newcommand{\Cov}[0]{\text{Cov}}                                %  Variance
+\newcommand{\Corr}[0]{\text{Corr}}                                %  Variance
+\let\oldvec\vec
+\renewcommand{\vec}[1]{\mathbf{#1}}                            %  Vector Styling
+\newtheorem{thm}{Theorem}                                               %  Define the theorem name
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}                                     %  Define the definition name
+\newtheorem{ex}{Example}                                                %  Define the example name
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
