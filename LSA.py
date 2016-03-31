@@ -1,14 +1,15 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python3
 
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+
+import scipy.sparse as scs
+import scipy.sparse.linalg as ssl
 from scipy.sparse import coo_matrix
 from scipy.sparse import dok_matrix
-import scipy.sparse.linalg as ssl
-import scipy.sparse as scs
-from scipy.sparse import dok_matrix
+
 from tqdm import tqdm
 
 
@@ -17,7 +18,7 @@ alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
 def main():
     data = pd.read_csv('./data/JEOPARDY_CSV.csv')
-    data = data[:100]
+    data = data[:1000]
 
     m = len(data)
 
@@ -36,7 +37,6 @@ def main():
     ndocterm
 
     u, s, vt = ssl.svds(ndocterm.T, k=20)
-    u.shape, s.shape, vt.shape
 
 
 def unique_words(sentences):
