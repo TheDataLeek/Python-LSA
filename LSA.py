@@ -3,6 +3,7 @@
 import sys
 import re
 import math
+import time
 import concurrent.futures
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,17 +24,25 @@ def main():
     documents = data[[' Question']].values[:10000, 0]
 
     doccount = len(documents)
+    print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
 
     words = get_unique_words(documents)
     wordcount = len(words.keys())
+    topwords = ','.join([w for w, s in sorted(words.items(), key=lambda tup: -tup[1]['freq'])[:100]])
 
-    print('\n{} Documents (m) by {} Unique Words (n)\n\nTop 100 Most Frequent Words:{}\n'.format(
-            doccount, wordcount, ','.join([w for w, s in sorted(words.items(), key=lambda tup: -tup[1]['freq'])[:100]])))
+    print(('Found Word Frequencies\n'
+           '\n{} Documents (m) by {} Unique Words (n)\n\n'
+           'Top 100 Most Frequent Words:{}\n'
+           'Time Elapsed: {}\n').format(doccount,
+                                        wordcount,
+                                        topwords,
+                                        time.clock()))
 
     docmatrix = get_sparse_matrix(documents, words)
+    print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
 
-    print('Calculating SVD Decomposition')
     u, s, vt = ssl.svds(docmatrix, k=20)
+    print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
 
 def get_sparse_matrix(documents, words):
