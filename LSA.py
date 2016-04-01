@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+
+"""
+Perform LSA on given set of text.
+
+See README.md for details
+"""
+
+
 import sys
 import re
 import math
@@ -7,21 +15,17 @@ import time
 import argparse
 import concurrent.futures
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-
-import scipy.sparse as scs
 import scipy.sparse.linalg as ssl
-from scipy.sparse import coo_matrix
 from scipy.sparse import dok_matrix
-
 from tqdm import tqdm
 
+
 def main():
+    """ Manage Execution """
     args = get_args()
 
-    with open(args.filename, 'r') as f:
-        lines = f.read().split('\n')
+    with open(args.filename, 'r') as datafile:
+        lines = datafile.read().split('\n')
         documents = np.empty(len(lines) if args.count == -1 else args.count, dtype=object)
         for i, line in enumerate(lines):
             if i >= args.count:
@@ -33,7 +37,8 @@ def main():
 
     words = get_unique_words(documents, args.workers)
     wordcount = len(words.keys())
-    topwords = ','.join([w for w, s in sorted(words.items(), key=lambda tup: -tup[1]['freq'])[:100]])
+    topwords = ','.join([w for w, s in sorted(words.items(),
+                                              key=lambda tup: -tup[1]['freq'])[:100]])
 
     print(('Found Word Frequencies\n'
            '\n{} Documents (m) by {} Unique Words (n)\n\n'
@@ -50,35 +55,15 @@ def main():
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
 
-def get_sparse_matrix(documents, words, workers):
-    m = len(documents)
-    n = len(words.keys())
-    data_bins = np.array_split(documents, workers)
-    docmatrix = dok_matrix((m, n), dtype=float)
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i for i in range(workers)}
-        for future in tqdm(concurrent.futures.as_completed(futures),
-                           desc='Parsing Documents and Combining Arrays', leave=True, total=workers):
-            # THIS IS THE BOTTLENECK
-            for key, value in future.result().items():
-                docmatrix[key[0], key[1]] = value
-    return docmatrix
-
-
-def parse_docs(data, words, total_doc_count):
-    m = len(data)
-    n = len(words.keys())
-    docmatrix = {}
-    wordref = {w:i for i, w in enumerate(sorted(words.keys()))}
-    for i, doc in enumerate(data):
-        for word in list(set([re.sub('[^a-z]+', '', w.lower()) for w in doc.split(' ')])):
-            if word != '':
-                # tf-idf https://en.wikipedia.org/wiki/Tf%E2%80%93idf
-                docmatrix[(i, wordref[word])] = math.log(total_doc_count / (words[word]['doccount'])) * words[word]['freq']
-    return docmatrix
-
-
 def get_unique_words(documents, workers):
+    """
+    Parallelize Unique Word Calculation
+
+    :param documents: list<str> => list of document strings
+    :param workers: int => number of workers
+
+    :return: dict<str,dict<str,int>> => dictionary of word frequencies
+    """
     data_bins = np.array_split(documents, workers)
     wordlist = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -95,6 +80,13 @@ def get_unique_words(documents, workers):
 
 
 def unique_words(data):
+    """
+    Finds unique word frequencies in documents
+
+    :param data: list<str> => list of document strings
+
+    :return: dict<str,dict<str,int>> => dictionary of word frequencies
+    """
     words = {}
     olddoc = None
     for doc in data:
@@ -111,7 +103,62 @@ def unique_words(data):
     return words
 
 
+def get_sparse_matrix(documents, words, workers):
+    """
+    Parallelize Sparse Matrix Calculation
+
+    :param documents: list<str> => list of document strings
+    :param words: dict<str,dict<str,int>> => dictionary of word frequencies
+    :param workers: int => number of workers
+
+    :return: scipy.sparse.dok_matrix((m, n), dtype=float)
+    """
+    m = len(documents)
+    n = len(words.keys())
+    data_bins = np.array_split(documents, workers)
+    docmatrix = dok_matrix((m, n), dtype=float)
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i
+                   for i in range(workers)}
+        for future in tqdm(concurrent.futures.as_completed(futures),
+                           desc='Parsing Documents and Combining Arrays',
+                           leave=True, total=workers):
+            # THIS IS THE BOTTLENECK
+            for key, value in future.result().items():
+                docmatrix[key[0], key[1]] = value
+    return docmatrix
+
+
+def parse_docs(data, words, total_doc_count):
+    """
+    Parallelize Sparse Matrix Calculation
+
+    :param data: list<str> => list of document strings
+    :param words: dict<str,dict<str,int>> => dictionary of word frequencies
+    :param total_doc_count: int => total number of documents (for tf-idf)
+
+    :return: dict<tup<int,int>, float> => Basically sparse array with weighted values
+    """
+    m = len(data)
+    n = len(words.keys())
+    docmatrix = {}
+    wordref = {w:i for i, w in enumerate(sorted(words.keys()))}
+    for i, doc in enumerate(data):
+        for word in list(set([re.sub('[^a-z]+', '', w.lower()) for w in doc.split(' ')])):
+            if word != '':
+                # tf-idf https://en.wikipedia.org/wiki/Tf%E2%80%93idf
+                docmatrix[(i, wordref[word])] = (math.log(total_doc_count /
+                                                          (words[word]['doccount'])) *
+                                                 words[word]['freq'])
+    return docmatrix
+
+
 def get_args():
+    """
+    Get Command line Arguments
+
+    :return: args
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--workers', type=int, default=32,
                         help=('Number of workers to use for multiprocessing'))
