@@ -4,6 +4,7 @@ import sys
 import re
 import math
 import time
+import argparse
 import concurrent.futures
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,17 +17,21 @@ from scipy.sparse import dok_matrix
 
 from tqdm import tqdm
 
-WORKERS = 32
-
 def main():
-    data = pd.read_csv('./data/JEOPARDY_CSV.csv')
-    #documents = data[[' Question']].values[:, 0]
-    documents = data[[' Question']].values[:10000, 0]
+    args = get_args()
+
+    with open(args.filename, 'r') as f:
+        lines = f.read().split('\n')
+        documents = np.empty(len(lines) if args.count == -1 else args.count, dtype=object)
+        for i, line in enumerate(lines):
+            if i >= args.count:
+                break
+            documents[i] = line
 
     doccount = len(documents)
     print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
 
-    words = get_unique_words(documents)
+    words = get_unique_words(documents, args.workers)
     wordcount = len(words.keys())
     topwords = ','.join([w for w, s in sorted(words.items(), key=lambda tup: -tup[1]['freq'])[:100]])
 
@@ -38,22 +43,22 @@ def main():
                                         topwords,
                                         time.clock()))
 
-    docmatrix = get_sparse_matrix(documents, words)
+    docmatrix = get_sparse_matrix(documents, words, args.workers)
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
 
-    u, s, vt = ssl.svds(docmatrix, k=20)
+    u, s, vt = ssl.svds(docmatrix, k=args.svdk)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
 
-def get_sparse_matrix(documents, words):
+def get_sparse_matrix(documents, words, workers):
     m = len(documents)
     n = len(words.keys())
-    data_bins = np.array_split(documents, WORKERS)   # TODO: adjustable bins
+    data_bins = np.array_split(documents, workers)
     docmatrix = dok_matrix((m, n), dtype=float)
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i for i in range(WORKERS)}
+        futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i for i in range(workers)}
         for future in tqdm(concurrent.futures.as_completed(futures),
-                           desc='Parsing Documents and Combining Arrays', leave=True, total=WORKERS):
+                           desc='Parsing Documents and Combining Arrays', leave=True, total=workers):
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
                 docmatrix[key[0], key[1]] = value
@@ -73,13 +78,13 @@ def parse_docs(data, words, total_doc_count):
     return docmatrix
 
 
-def get_unique_words(documents):
-    data_bins = np.array_split(documents, WORKERS)   # TODO: adjustable bins
+def get_unique_words(documents, workers):
+    data_bins = np.array_split(documents, workers)
     wordlist = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = {executor.submit(unique_words, data_bins[i]):i for i in range(WORKERS)}
+        futures = {executor.submit(unique_words, data_bins[i]):i for i in range(workers)}
         for future in tqdm(concurrent.futures.as_completed(futures),
-                           desc='Determining Unique Words', leave=True, total=WORKERS):
+                           desc='Determining Unique Words', leave=True, total=workers):
             for word, stats in future.result().items():
                 try:
                     wordlist[word]['freq'] += stats['freq']
@@ -104,6 +109,20 @@ def unique_words(data):
                     words[cword] = {'freq':1, 'doccount':1}
         olddoc = doc
     return words
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-w', '--workers', type=int, default=32,
+                        help=('Number of workers to use for multiprocessing'))
+    parser.add_argument('-c', '--count', type=int, default=-1,
+                        help=('Number of documents to use from original set'))
+    parser.add_argument('-k', '--svdk', type=int, default=20,
+                        help=('SVD Degree'))
+    parser.add_argument('-f', '--filename', type=str, default='./data/jeopardy.csv',
+                        help=('File to use for analysis'))
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == '__main__':
