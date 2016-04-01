@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
+import re
+import concurrent.futures
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -12,22 +14,21 @@ from scipy.sparse import dok_matrix
 
 from tqdm import tqdm
 
-
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
-
+WORKERS = 8
 
 def main():
     data = pd.read_csv('./data/JEOPARDY_CSV.csv')
-    data = data[:1000]
+    documents = data[[' Question']].values[:, 0]
 
-    m = len(data)
+    doccount = len(data)
 
-    words, n, wordfreq = unique_words(list(np.concatenate((data[[' Question']].values[:, 0],
-                                      data[[' Answer']].values[:, 0]))))
+    words = get_unique_words(documents)
+    wordcount = len(words.keys())
 
     print('{} Documents (m) by {} Unique Words (n)\n\nTop 100 Most Frequent Words:{}'.format(
-            m, n, ','.join([tup[0] for tup in sorted(wordfreq.items(), key=lambda tup: -tup[1])[:100]])))
+            doccount, wordcount, ','.join([tup[0] for tup in sorted(words.items(), key=lambda tup: -tup[1])[:100]])))
 
+    return
 
     docmatrix = dok_matrix((m, n), dtype=float)   # m-docs, n-unique words
 
@@ -39,26 +40,33 @@ def main():
     u, s, vt = ssl.svds(ndocterm.T, k=20)
 
 
-def unique_words(sentences):
-    words = {}
-    n = len(sentences)
-    for i in range(n):
-        sent_list = [w.lower() for w in sentences[i].split(' ')]
-        clean_sent_list = []
-        for j in range(len(sent_list)):
-            newword = ''
-            for char in sent_list[j]:
-                if char in alphabet:
-                    newword += char
-            clean_sent_list.append(newword)
-        for word in clean_sent_list:
-            if word != '':
+def get_unique_words(documents):
+    data_bins = np.array_split(documents, 8)   # TODO: adjustable bins
+    wordlist = {}
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = {executor.submit(unique_words, data_bins[i]):i for i in range(WORKERS)}
+        for future in tqdm(concurrent.futures.as_completed(futures),
+                           desc='Determining Unique Words', leave=True, total=WORKERS):
+            i = futures[future]
+            for word, freq in future.result().items():
                 try:
-                    words[word] += 1
+                    wordlist[word] += freq
                 except KeyError:
-                    words[word] = 1
-    wordlist = sorted(words.keys())
-    return wordlist, len(wordlist), words
+                    wordlist[word] = freq
+    return wordlist
+
+
+def unique_words(data):
+    words = {}
+    for doc in data:
+        for word in doc.split(' '):
+            cword = re.sub('[^a-z]+', '', word.lower())
+            if cword != '':
+                try:
+                    words[cword] += 1
+                except KeyError:
+                    words[cword] = 1
+    return words
 
 # Use tf-idf
 # https://en.wikipedia.org/wiki/Tf%E2%80%93idf
