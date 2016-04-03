@@ -1,5 +1,7 @@
 # Latent Semantic Analysis in Python
 
+[![Build Status](https://travis-ci.org/willzfarmer/Python-LSA.svg?branch=master)](https://travis-ci.org/willzfarmer/Python-LSA)<Paste>
+
 In this project we will perform [latent semantic
 analysis](https://en.wikipedia.org/wiki/Latent_semantic_analysis) of large
 document sets.
