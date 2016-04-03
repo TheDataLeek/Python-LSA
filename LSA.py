@@ -17,6 +17,7 @@ import concurrent.futures
 import numpy as np
 import scipy.sparse.linalg as ssl
 from scipy.sparse import dok_matrix
+from scipy.sparse import dok
 from tqdm import tqdm
 import numba
 
@@ -59,14 +60,14 @@ def main():
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
 
-def get_unique_words(documents, workers):
+def get_unique_words(documents: list, workers: int) -> dict:
     """
     Parallelize Unique Word Calculation
 
-    :param documents: list<str> => list of document strings
-    :param workers: int => number of workers
+    :documents: list of document strings
+    :workers: number of workers
 
-    :return: dict<str,dict<str,int>> => dictionary of word frequencies
+    :return: dictionary of word frequencies
     """
     data_bins = np.array_split(documents, workers)
     wordlist = {}
@@ -83,13 +84,13 @@ def get_unique_words(documents, workers):
     return wordlist
 
 
-def unique_words(data):
+def unique_words(data: list) -> dict:
     """
     Finds unique word frequencies in documents
 
-    :param data: list<str> => list of document strings
+    :data: list of document strings
 
-    :return: dict<str,dict<str,int>> => dictionary of word frequencies
+    :return: dictionary of word frequencies
     """
     words = {}
     olddoc = None
@@ -107,15 +108,15 @@ def unique_words(data):
     return words
 
 
-def get_sparse_matrix(documents, words, workers):
+def get_sparse_matrix(documents: list, words: dict, workers: int) -> dok.dok_matrix:
     """
     Parallelize Sparse Matrix Calculation
 
-    :param documents: list<str> => list of document strings
-    :param words: dict<str,dict<str,int>> => dictionary of word frequencies
-    :param workers: int => number of workers
+    :documents: list of document strings
+    :words: dictionary of word frequencies
+    :workers: number of workers
 
-    :return: scipy.sparse.dok_matrix((m, n), dtype=float)
+    :return: Sparse document term matrix
     """
     m = len(documents)
     n = len(words.keys())
@@ -133,15 +134,15 @@ def get_sparse_matrix(documents, words, workers):
     return docmatrix
 
 
-def parse_docs(data, words, total_doc_count):
+def parse_docs(data: list, words: dict, total_doc_count: int) -> dict:
     """
     Parallelize Sparse Matrix Calculation
 
-    :param data: list<str> => list of document strings
-    :param words: dict<str,dict<str,int>> => dictionary of word frequencies
-    :param total_doc_count: int => total number of documents (for tf-idf)
+    :data: list of document strings
+    :words: dictionary of word frequencies
+    :total_doc_count: total number of documents (for tf-idf)
 
-    :return: dict<tup<int,int>, float> => Basically sparse array with weighted values
+    :return: Basically sparse array with weighted values
     """
     m = len(data)
     n = len(words.keys())
@@ -150,7 +151,6 @@ def parse_docs(data, words, total_doc_count):
     for i, doc in enumerate(data):
         for word in list(set([re.sub('[^a-z]+', '', w.lower()) for w in doc.split(' ')])):
             if word != '':
-                # tf-idf https://en.wikipedia.org/wiki/Tf%E2%80%93idf
                 docmatrix[(i, wordref[word])] = weight(total_doc_count,
                                                        words[word]['doccount'],
                                                        words[word]['freq'])
@@ -158,11 +158,16 @@ def parse_docs(data, words, total_doc_count):
 
 
 @numba.jit
-def weight(total_doc_count, doccount, wordfreq):
+def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
+    """
+    Weighting function for Document Term Matrix.
+
+    tf-idf => https://en.wikipedia.org/wiki/Tf%E2%80%93idf
+    """
     return math.log(total_doc_count / doccount) * wordfreq
 
 
-def get_args():
+def get_args() -> argparse.Namespace:
     """
     Get Command line Arguments
 
