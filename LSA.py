@@ -20,6 +20,7 @@ from scipy.sparse import dok_matrix
 from scipy.sparse import dok
 from tqdm import tqdm
 import numba
+import enforce
 
 
 def main():
@@ -60,7 +61,8 @@ def main():
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
 
-def get_unique_words(documents: list, workers: int) -> dict:
+@enforce.runtime_validation
+def get_unique_words(documents: np.ndarray, workers: int) -> dict:
     """
     Parallelize Unique Word Calculation
 
@@ -84,7 +86,8 @@ def get_unique_words(documents: list, workers: int) -> dict:
     return wordlist
 
 
-def unique_words(data: list) -> dict:
+@enforce.runtime_validation
+def unique_words(data: np.ndarray) -> dict:
     """
     Finds unique word frequencies in documents
 
@@ -108,7 +111,8 @@ def unique_words(data: list) -> dict:
     return words
 
 
-def get_sparse_matrix(documents: list, words: dict, workers: int) -> dok.dok_matrix:
+@enforce.runtime_validation
+def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int) -> dok.dok_matrix:
     """
     Parallelize Sparse Matrix Calculation
 
@@ -134,7 +138,8 @@ def get_sparse_matrix(documents: list, words: dict, workers: int) -> dok.dok_mat
     return docmatrix
 
 
-def parse_docs(data: list, words: dict, total_doc_count: int) -> dict:
+@enforce.runtime_validation
+def parse_docs(data: np.ndarray, words: dict, total_doc_count: int) -> dict:
     """
     Parallelize Sparse Matrix Calculation
 
@@ -167,6 +172,7 @@ def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
     return math.log(total_doc_count / doccount) * wordfreq
 
 
+@enforce.runtime_validation
 def get_args() -> argparse.Namespace:
     """
     Get Command line Arguments

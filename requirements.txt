@@ -1,0 +1,6 @@
+numpy
+scipy
+tqdm
+numba
+enforce
+pytest
