@@ -18,6 +18,7 @@ import numpy as np
 import scipy.sparse.linalg as ssl
 from scipy.sparse import dok_matrix
 from tqdm import tqdm
+import numba
 
 
 def main():
@@ -26,9 +27,12 @@ def main():
 
     with open(args.filename, 'r') as datafile:
         lines = datafile.read().split('\n')
-        documents = np.empty(len(lines) if args.count == -1 else args.count, dtype=object)
+        size = args.count
+        if size == -1:
+            size = len(lines)
+        documents = np.empty(size, dtype=object)
         for i, line in enumerate(lines):
-            if i >= args.count:
+            if i >= size:
                 break
             documents[i] = line
 
@@ -147,10 +151,15 @@ def parse_docs(data, words, total_doc_count):
         for word in list(set([re.sub('[^a-z]+', '', w.lower()) for w in doc.split(' ')])):
             if word != '':
                 # tf-idf https://en.wikipedia.org/wiki/Tf%E2%80%93idf
-                docmatrix[(i, wordref[word])] = (math.log(total_doc_count /
-                                                          (words[word]['doccount'])) *
-                                                 words[word]['freq'])
+                docmatrix[(i, wordref[word])] = weight(total_doc_count,
+                                                       words[word]['doccount'],
+                                                       words[word]['freq'])
     return docmatrix
+
+
+@numba.jit
+def weight(total_doc_count, doccount, wordfreq):
+    return math.log(total_doc_count / doccount) * wordfreq
 
 
 def get_args():
