@@ -28,18 +28,7 @@ def main():
     """ Manage Execution """
     args = get_args()
 
-    with open(args.filename, 'r') as datafile:
-        lines = datafile.read().split('\n')
-        size = args.count
-        if size == -1:
-            size = len(lines)
-        documents = np.empty(size, dtype=object)
-        for i, line in enumerate(lines):
-            if i >= size:
-                break
-            documents[i] = line
-
-    doccount = len(documents)
+    documents, doccount = open_documents(args.filename, args.count)
     print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
 
     words = get_unique_words(documents, args.workers)
@@ -62,8 +51,23 @@ def main():
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
     if args.save:
-        output = {'u':u, 'd': np.diag(s), 'vt':vt, 'words':list(words.keys())}
-        scio.savemat('output.mat', output)
+        output = {'u':u, 'd': np.diag(s), 'vt':vt, 'words': list(words.keys())}
+        save_output(output)
+
+
+@enforce.runtime_validation
+def open_documents(filename: str, size: int) -> tuple:
+    with open(filename, 'r') as datafile:
+        lines = datafile.read().split('\n')
+        if size == -1:
+            size = len(lines)
+        documents = np.empty(size, dtype=object)
+        for i, line in enumerate(lines):
+            if i >= size:
+                break
+            documents[i] = line
+    doccount = len(documents)
+    return documents, doccount
 
 
 @enforce.runtime_validation
@@ -175,6 +179,11 @@ def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
     tf-idf => https://en.wikipedia.org/wiki/Tf%E2%80%93idf
     """
     return math.log(total_doc_count / doccount) * wordfreq
+
+
+@enforce.runtime_validation
+def save_output(output: dict) -> None:
+    scio.savemat('output.mat', output)
 
 
 @enforce.runtime_validation
