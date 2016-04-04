@@ -3,5 +3,11 @@ python:
     3.5
 before_install:
     - "sudo apt-get install python-numpy python-scipy python-matplotlib python-nose"
-install: "pip install -r requirements.txt"
+install:
+    - "pip install numpy"
+    - "pip install scipy"
+    - "pip install tqdm"
+    - "pip install numba"
+    - "pip install enforce"
+    - "pip install pytest"
 script: "py.test"
