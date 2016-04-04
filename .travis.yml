@@ -1,9 +1,7 @@
 language: python
-python:
-    3.5
-before_install:
-    - "sudo apt-get install python-numpy python-scipy python-matplotlib python-nose"
+python: 3.5
 install:
+    - "pip install llvmlite"
     - "pip install numpy"
     - "pip install scipy"
     - "pip install tqdm"
