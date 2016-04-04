@@ -3,11 +3,11 @@ python: 3.5
 before_install:
     - "pip3.5 install setuptools --upgrade"
 install:
-    - "pip install llvmlite"
-    - "pip install numpy"
-    - "pip install scipy"
-    - "pip install tqdm"
-    - "pip install numba"
-    - "pip install enforce"
-    - "pip install pytest"
+    - "pip3.5 install llvmlite"
+    - "pip3.5 install numpy"
+    - "pip3.5 install scipy"
+    - "pip3.5 install tqdm"
+    - "pip3.5 install numba"
+    - "pip3.5 install enforce"
+    - "pip3.5 install pytest"
 script: "py.test"
