@@ -15,6 +15,7 @@ import time
 import argparse
 import concurrent.futures
 import numpy as np
+import scipy.io as scio
 import scipy.sparse.linalg as ssl
 from scipy.sparse import dok_matrix
 from scipy.sparse import dok
@@ -57,8 +58,12 @@ def main():
     docmatrix = get_sparse_matrix(documents, words, args.workers)
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
 
-    u, s, vt = ssl.svds(docmatrix, k=args.svdk)
+    u, s, vt = ssl.svds(docmatrix.T, k=args.svdk)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
+
+    if args.save:
+        output = {'u':u, 'd': np.diag(s), 'vt':vt, 'words':list(words.keys())}
+        scio.savemat('output.mat', output)
 
 
 @enforce.runtime_validation
@@ -188,6 +193,8 @@ def get_args() -> argparse.Namespace:
                         help=('SVD Degree'))
     parser.add_argument('-f', '--filename', type=str, default='./data/jeopardy.csv',
                         help=('File to use for analysis'))
+    parser.add_argument('-s', '--save', action='store_true', default=False,
+                        help=('Save output in .mat file.'))
     args = parser.parse_args()
     return args
 
