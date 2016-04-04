@@ -1,5 +1,7 @@
 language: python
 python: 3.5
+before_install:
+    - "pip install setuptools --upgrade"
 install:
     - "pip install llvmlite"
     - "pip install numpy"
