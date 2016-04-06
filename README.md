@@ -26,3 +26,7 @@ Notes to @rrish:
 * It is currently using the basic tf-idf weighting. We may wish to adjust
   this later.
 * Email me with questions. I'll try to get this thing commented ASAP.
+* 
+
+
+The SVD_using_LSA.m file is a matlab implementation of the latter half of the LSA algorithm once the document-term matrix has been constructed and the SVD has been calculated. It calculated the new word matrix and doc matrix and then takes a query and calculates the cosine distances of the query with each of the documents (columns of the doc matrix, saved into a new array called "docs"). Finally, it ranks the documents according to the relevance to the query word/words.
