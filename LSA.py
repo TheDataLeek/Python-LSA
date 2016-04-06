@@ -50,7 +50,10 @@ def main():
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
     if args.save:
-        output = {'u':u, 'd': np.diag(s), 'vt':vt, 'words': list(words.keys())}
+        output = {'u':u, 'd': np.diag(s), 'vt':vt,
+                    'documents': np.array(documents, dtype=object),
+                    'words': np.array(list(words.keys()), dtype=object)}
+        print('Saving U: {}, S: {}, V.T: {}'.format(u.shape, s.shape, vt.shape))
         save_output(output)
 
 
@@ -103,7 +106,7 @@ def unique_words(data: np.ndarray) -> dict:
 
     :return: dictionary of word frequencies
     """
-    words = {}
+    words  = {}
     olddoc = None
     for doc in data:
         for word in doc.split(' '):
@@ -114,7 +117,7 @@ def unique_words(data: np.ndarray) -> dict:
                     if doc != olddoc:
                         words[cword]['doccount'] += 1
                 except KeyError:
-                    words[cword] = {'freq':1, 'doccount':1}
+                    words[cword] = {'freq': 1, 'doccount': 1}
         olddoc = doc
     return words
 
