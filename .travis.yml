@@ -5,13 +5,11 @@ before_install:
     - "sudo apt-get install libatlas-base-dev"  # for scipy. Provides LAPACK/BLAS
     - "sudo apt-get install libopenblas-base libopenblas-dev"
     - "sudo apt-get install gfortran"   # for scipy
-    - "sudo apt-get install llvm"
     - "pip3.5 install setuptools --upgrade"
 install:
     - "pip3.5 install numpy"
     - "pip3.5 install scipy"
     - "pip3.5 install tqdm"
-    - "pip3.5 install numba"
     - "pip3.5 install enforce"
     - "pip3.5 install pytest"
 script: "py.test"

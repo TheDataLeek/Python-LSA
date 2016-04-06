@@ -20,7 +20,6 @@ import scipy.sparse.linalg as ssl
 from scipy.sparse import dok_matrix
 from scipy.sparse import dok
 from tqdm import tqdm
-import numba
 import enforce
 
 
@@ -171,7 +170,6 @@ def parse_docs(data: np.ndarray, words: dict, total_doc_count: int) -> dict:
     return docmatrix
 
 
-@numba.jit
 def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
     """
     Weighting function for Document Term Matrix.
