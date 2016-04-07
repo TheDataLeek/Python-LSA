@@ -10,3 +10,5 @@ class TestLSA(object):
         docs = np.random.choice(words, size=1000)
         unique_words = LSA.unique_words(docs)
         assert sorted(unique_words.keys()) == words
+
+    def test_document_term_matrix(self):
