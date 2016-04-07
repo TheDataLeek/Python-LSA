@@ -53,7 +53,7 @@ def main():
     if args.save:
         output = {'u':u, 'd': np.diag(s), 'vt':vt,
                     'documents': np.array(documents, dtype=object),
-                    'words': np.array(list(words.keys()), dtype=object)}
+                    'words': np.array(list(sorted(words.keys())), dtype=object)}
         print('Saving U: {}, S: {}, V.T: {}'.format(u.shape, s.shape, vt.shape))
         save_output(output)
 
@@ -147,11 +147,15 @@ def get_sparse_matrix(documents: np.ndarray,
                            desc='Parsing Documents and Combining Arrays',
                            leave=True, total=workers):
             binnum = futures[future]
-            new_docs.append(data_bins[binnum])
+            # Because order is not preserved in threads, we need to make sure we add
+            # the documents back in the correct order.
+            for doc in data_bins[binnum]:
+                new_docs.append(doc)
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
                 docmatrix[key[0], key[1]] = value
-    return docmatrix, np.array(new_docs)
+    new_docs = np.array(new_docs, dtype=object)
+    return docmatrix, new_docs
 
 
 @enforce.runtime_validation
