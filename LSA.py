@@ -14,6 +14,7 @@ import math
 import time
 import argparse
 import concurrent.futures
+import typing
 import numpy as np
 import scipy.io as scio
 import scipy.sparse.linalg as ssl
@@ -43,7 +44,7 @@ def main():
                                         topwords,
                                         time.clock()))
 
-    docmatrix = get_sparse_matrix(documents, words, args.workers)
+    docmatrix, documents = get_sparse_matrix(documents, words, args.workers)
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
 
     u, s, vt = ssl.svds(docmatrix.T, k=args.svdk)
@@ -58,7 +59,7 @@ def main():
 
 
 @enforce.runtime_validation
-def open_documents(filename: str, size: int) -> tuple:
+def open_documents(filename: str, size: int) -> typing.Tuple[np.ndarray, int]:
     with open(filename, 'r') as datafile:
         lines = datafile.read().split('\n')
         if size == -1:
@@ -123,7 +124,8 @@ def unique_words(data: np.ndarray) -> dict:
 
 
 @enforce.runtime_validation
-def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int) -> dok.dok_matrix:
+def get_sparse_matrix(documents: np.ndarray,
+                      words: dict, workers: int) -> typing.Tuple[dok.dok_matrix, np.ndarray]:
     """
     Parallelize Sparse Matrix Calculation
 
@@ -133,20 +135,23 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int) -> dok.d
 
     :return: Sparse document term matrix
     """
-    m = len(documents)
-    n = len(words.keys())
+    m         = len(documents)
+    n         = len(words.keys())
     data_bins = np.array_split(documents, workers)
     docmatrix = dok_matrix((m, n), dtype=float)
+    new_docs  = []
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i
                    for i in range(workers)}
         for future in tqdm(concurrent.futures.as_completed(futures),
                            desc='Parsing Documents and Combining Arrays',
                            leave=True, total=workers):
+            binnum = futures[future]
+            new_docs.append(data_bins[binnum])
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
                 docmatrix[key[0], key[1]] = value
-    return docmatrix
+    return docmatrix, np.array(new_docs)
 
 
 @enforce.runtime_validation
