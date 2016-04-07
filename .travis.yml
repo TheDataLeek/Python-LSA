@@ -1,14 +1,14 @@
 language: python
 python: 3.5
 sudo: required
+virtualenv:
+    system_site_packages: true
 before_install:
-    - "sudo apt-get install libatlas-base-dev"  # for scipy. Provides LAPACK/BLAS
-    - "sudo apt-get install libopenblas-base libopenblas-dev"
-    - "sudo apt-get install gfortran"   # for scipy
-    - "pip3.5 install setuptools --upgrade"
+    - "SITE_PKG_DIR=$VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/site-packages"
+    - "rm -f $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt"
 install:
-    - "pip3.5 install numpy"
-    - "pip3.5 install scipy"
+    - "sudo apt-get install python3-numpy"
+    - "sudo apt-get install python3-scipy"
     - "pip3.5 install tqdm"
     - "pip3.5 install enforce"
     - "pip3.5 install pytest"
