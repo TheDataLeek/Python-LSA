@@ -4,8 +4,7 @@ sudo: required
 virtualenv:
     system_site_packages: true
 before_install:
-    - "SITE_PKG_DIR=$VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/site-packages"
-    - "rm -f $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt"
+    - "echo testing install"
 install:
     - "sudo apt-get install python3-numpy"
     - "sudo apt-get install python3-scipy"

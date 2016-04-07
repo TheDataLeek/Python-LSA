@@ -62,15 +62,21 @@ def main():
 def open_documents(filename: str, size: int) -> typing.Tuple[np.ndarray, int]:
     with open(filename, 'r') as datafile:
         lines = datafile.read().split('\n')
-        if size == -1:
-            size = len(lines)
-        documents = np.empty(size, dtype=object)
-        for i, line in enumerate(lines):
-            if i >= size:
-                break
-            documents[i] = line
+        documents = read_raw_docs(lines, size)
     doccount = len(documents)
     return documents, doccount
+
+
+@enforce.runtime_validation
+def read_raw_docs(lines: list, size: int) -> np.ndarray:
+    if size == -1:
+        size = len(lines)
+    documents = np.empty(size, dtype=object)
+    for i, line in enumerate(lines):
+        if i >= size:
+            break
+        documents[i] = line
+    return documents
 
 
 @enforce.runtime_validation
@@ -124,8 +130,8 @@ def unique_words(data: np.ndarray) -> dict:
 
 
 @enforce.runtime_validation
-def get_sparse_matrix(documents: np.ndarray,
-                      words: dict, workers: int) -> typing.Tuple[dok.dok_matrix, np.ndarray]:
+def get_sparse_matrix(documents: np.ndarray, words: dict,
+                      workers: int, weighting: str='default') -> typing.Tuple[dok.dok_matrix, np.ndarray]:
     """
     Parallelize Sparse Matrix Calculation
 
@@ -137,9 +143,13 @@ def get_sparse_matrix(documents: np.ndarray,
     """
     m         = len(documents)
     n         = len(words.keys())
+    # Make sure we don't have more bins than workers
+    workers   = m if m < workers else workers
     data_bins = np.array_split(documents, workers)
     docmatrix = dok_matrix((m, n), dtype=float)
     new_docs  = []
+    offsets   = [len(bin) for bin in data_bins]
+    coffset   = 0
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i
                    for i in range(workers)}
@@ -153,7 +163,10 @@ def get_sparse_matrix(documents: np.ndarray,
                 new_docs.append(doc)
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
-                docmatrix[key[0], key[1]] = value
+                # TODO: Add more weight options
+                weight = value if weighting == 'default' else 1
+                docmatrix[key[0] + coffset, key[1]] = weight
+            coffset += offsets[binnum]
     new_docs = np.array(new_docs, dtype=object)
     return docmatrix, new_docs
 
