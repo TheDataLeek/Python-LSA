@@ -3,13 +3,14 @@
 clc;
 clear all;
 
-t = load('output.mat')
+t = load('output_small.mat')
 wordlist = t.words;   
 u = t.u;
 vt = t.vt;
 d = t.d;
+documents = t.documents;
 
-k = 300;
+k = 100;
 query_flag = false;
 
 num_docs = size(vt,2);
@@ -30,9 +31,8 @@ num_queries = input('Enter the number of words you wish to query');
 for j = 1:num_queries
     fprintf('Query number %d:\n',j)
     query = input('Enter the query word');
-    query_len = length(query);
     for i = 1:num_words
-        query_comp = strcmp(query,wordlist(i,[1:query_len]));
+        query_comp = strcmpi(query,wordlist{i});
         if query_comp == 1
             query_flag = true;
             word_index(j) = i;
@@ -40,7 +40,7 @@ for j = 1:num_queries
     end 
     if query_flag == false
        errordlg('WTF enter a correct word');
-       break;
+       return;
     end
    query_flag = false;
 end
@@ -57,4 +57,4 @@ for i = 1:num_docs
 end
 
 [r I] = sort(rank,'descend');
-I
+
