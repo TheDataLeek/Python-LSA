@@ -16,5 +16,4 @@ install:
     - "pip3.5 install tqdm"
     - "pip3.5 install enforce"
     - "pip3.5 install pytest"
-    - "python setup.py develop"
 script: "py.test"
