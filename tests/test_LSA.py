@@ -53,3 +53,11 @@ class TestLSA(object):
                                                  [0, 1, 0, 0],
                                                  [1, 0, 1, 1]])).all()
 
+    def test_clean_text_word(self):
+        word = '!@#*(&F)(O&!{}:"><ObAR1230875'
+        assert LSA.clean_text(word) == 'foobar'
+
+    def test_clean_text_sentence(self):
+        sentence = '!@#*(&F) (O&!{}:"><O bAR123 testfoo0875'
+        assert LSA.clean_text(sentence) == 'f oo bar testfoo'
+

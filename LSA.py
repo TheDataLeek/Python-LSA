@@ -75,8 +75,13 @@ def read_raw_docs(lines: list, size: int) -> np.ndarray:
     for i, line in enumerate(lines):
         if i >= size:
             break
-        documents[i] = line
+        documents[i] = clean_text(line)
     return documents
+
+
+@enforce.runtime_validation
+def clean_text(line: str) -> str:
+    return re.sub('[^a-z ]+', '', line.lower())
 
 
 @enforce.runtime_validation
@@ -117,21 +122,19 @@ def unique_words(data: np.ndarray) -> dict:
     olddoc = None
     for doc in data:
         for word in doc.split(' '):
-            cword = re.sub('[^a-z]+', '', word.lower())
-            if cword != '':
+            if word != '':
                 try:
-                    words[cword]['freq'] += 1
+                    words[word]['freq'] += 1
                     if doc != olddoc:
-                        words[cword]['doccount'] += 1
+                        words[word]['doccount'] += 1
                 except KeyError:
-                    words[cword] = {'freq': 1, 'doccount': 1}
+                    words[word] = {'freq': 1, 'doccount': 1}
         olddoc = doc
     return words
 
 
 @enforce.runtime_validation
-def get_sparse_matrix(documents: np.ndarray, words: dict,
-                      workers: int, weighting: str='default') -> typing.Tuple[dok.dok_matrix, np.ndarray]:
+def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weighting: typing.Optional[str]='default') -> typing.Tuple[dok.dok_matrix, np.ndarray]:
     """
     Parallelize Sparse Matrix Calculation
 
@@ -148,7 +151,7 @@ def get_sparse_matrix(documents: np.ndarray, words: dict,
     data_bins = np.array_split(documents, workers)
     docmatrix = dok_matrix((m, n), dtype=float)
     new_docs  = []
-    offsets   = [len(bin) for bin in data_bins]
+    offsets   = [len(data_bin) for data_bin in data_bins]
     coffset   = 0
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i
@@ -187,7 +190,7 @@ def parse_docs(data: np.ndarray, words: dict, total_doc_count: int) -> dict:
     docmatrix = {}
     wordref = {w:i for i, w in enumerate(sorted(words.keys()))}
     for i, doc in enumerate(data):
-        for word in list(set([re.sub('[^a-z]+', '', w.lower()) for w in doc.split(' ')])):
+        for word in list(set(doc.split(' '))):
             if word != '':
                 docmatrix[(i, wordref[word])] = weight(total_doc_count,
                                                        words[word]['doccount'],
