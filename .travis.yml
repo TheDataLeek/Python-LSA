@@ -1,14 +1,20 @@
 language: python
 python: 3.5
 sudo: required
-virtualenv:
-    system_site_packages: true
 before_install:
-    - "echo testing install"
+    - "wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh"
+    - "chmod +x miniconda.sh"
+    - "bash miniconda.sh -b -p $HOME/miniconda"
+    - "export PATH=$HOME/miniconda/bin:$PATH"
+    - "hash -r"
+    - "conda update --quiet --yes conda"
 install:
-    - "sudo apt-get install python3-numpy"
-    - "sudo apt-get install python3-scipy"
-    - "pip3.5 install tqdm"
-    - "pip3.5 install enforce"
-    - "pip3.5 install pytest"
+    - "conda create --yes -n test python=$TRAVIS_PYTHON_VERSION"
+    - "source activate test"
+    - "conda install --quiet --yes numpy"
+    - "conda install --quiet --yes scipy"
+    - "conda install --quiet --yes tqdm"
+    - "conda install --quiet --yes enforce"
+    - "conda install --quiet --yes pytest"
+    - "python setup.py develop"
 script: "py.test"
