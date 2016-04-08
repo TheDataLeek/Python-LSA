@@ -137,6 +137,7 @@ def unique_words(data: np.ndarray) -> dict:
 def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weighting: typing.Optional[str]='default') -> typing.Tuple[dok.dok_matrix, np.ndarray]:
     """
     Parallelize Sparse Matrix Calculation
+    # TODO: Add more weight options
 
     :documents: list of document strings
     :words: dictionary of word frequencies
@@ -166,7 +167,6 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
                 new_docs.append(doc)
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
-                # TODO: Add more weight options
                 weight = value if weighting == 'default' else 1
                 docmatrix[key[0] + coffset, key[1]] = weight
             coffset += offsets[binnum]
