@@ -47,11 +47,12 @@ class TestLSA(object):
         assert docmatrix.shape == (wordcount, doclength)
 
         # Now make sure it's the right shape
-        assert (docmatrix.todense() == np.array([[0, 1, 1, 1],
-                                                 [0, 0, 1, 0],
-                                                 [0, 1, 0, 0],
-                                                 [0, 1, 0, 0],
-                                                 [1, 0, 1, 1]])).all()
+        goodshape = np.array([[0, 1, 1, 1],
+                              [0, 0, 1, 0],
+                              [0, 1, 0, 0],
+                              [0, 1, 0, 0],
+                              [1, 0, 1, 1]])
+        assert (docmatrix.todense() == goodshape).all()
 
     def test_clean_text_word(self):
         word = '!@#*(&F)(O&!{}:"><ObAR1230875'
