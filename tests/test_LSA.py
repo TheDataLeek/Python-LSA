@@ -17,10 +17,9 @@ class TestLSA(object):
     def doclength(self, docs):
         return len(docs)
 
-    def test_unique(self):
-        words = sorted(['foo', 'bar', 'biz', 'baz'])
-        docs = np.random.choice(words, size=1000)
+    def test_unique_words(self, docs):
         unique_words = LSA.unique_words(docs)
+        words = ['bar', 'baz', 'biz', 'boo', 'foo']
         assert sorted(unique_words.keys()) == words
 
     def test_sparse_matrix(self, docs, doclength):
@@ -39,6 +38,9 @@ class TestLSA(object):
         alphawords = sorted(list(words.keys()))
         docmatrix, newdocs = LSA.get_sparse_matrix(docs, words,
                                                    WORKERS, weighting='freq')
+        assert np.array([docs[i] == newdocs[i, 0]
+                         for i in range(len(newdocs))]).all()
+        assert newdocs.shape[0] == len(docs)
 
         # Transpose docmatrix
         docmatrix = docmatrix.T
@@ -52,7 +54,11 @@ class TestLSA(object):
                               [0, 1, 0, 0],
                               [0, 1, 0, 0],
                               [1, 0, 1, 1]])
-        assert (docmatrix.todense() == goodshape).all()
+        try:
+            assert (docmatrix.todense() == goodshape).all()
+        except AssertionError:
+            print(docmatrix.todense())
+            raise
 
     def test_clean_text_word(self):
         word = '!@#*(&F)(O&!{}:"><ObAR1230875'

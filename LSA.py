@@ -151,7 +151,7 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
     workers   = m if m < workers else workers
     data_bins = np.array_split(documents, workers)
     docmatrix = dok_matrix((m, n), dtype=float)
-    new_docs  = []
+    new_docs  = {}
     offsets   = [len(data_bin) for data_bin in data_bins]
     coffset   = 0
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -163,13 +163,14 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
             binnum = futures[future]
             # Because order is not preserved in threads, we need to make sure we add
             # the documents back in the correct order.
-            for doc in data_bins[binnum]:
-                new_docs.append(doc)
+            new_docs[binnum] = data_bins[binnum]
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
                 weight = value if weighting == 'default' else 1
                 docmatrix[key[0] + coffset, key[1]] = weight
             coffset += offsets[binnum]
+    new_docs = [wordlist for i, wordlist in
+                sorted(new_docs.items(), key=lambda tup: tup[0])]
     new_docs = np.array(new_docs, dtype=object)
     return docmatrix, new_docs
 
