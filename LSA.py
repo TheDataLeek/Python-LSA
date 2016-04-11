@@ -147,8 +147,17 @@ def unique_words(data: np.ndarray) -> dict:
     return words
 
 
+def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
+    """
+    Weighting function for Document Term Matrix.
+
+    tf-idf => https://en.wikipedia.org/wiki/Tf%E2%80%93idf
+    """
+    return math.log(total_doc_count / doccount) * wordfreq
+
+
 @enforce.runtime_validation
-def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weighting: typing.Optional[str]='default') -> typing.Tuple[dok.dok_matrix, np.ndarray]:
+def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weighting: typing.Any=weight) -> typing.Tuple[dok.dok_matrix, np.ndarray]:
     """
     Parallelize Sparse Matrix Calculation
     # TODO: Add more weight options
@@ -169,7 +178,7 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
     offsets   = [len(data_bin) for data_bin in data_bins]
     coffset   = 0
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = {executor.submit(parse_docs, data_bins[i], words, len(documents)):i
+        futures = {executor.submit(parse_docs, data_bins[i], words, len(documents), weight):i
                    for i in range(workers)}
         for future in tqdm(concurrent.futures.as_completed(futures),
                            desc='Parsing Documents and Combining Arrays',
@@ -180,8 +189,7 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
             new_docs[binnum] = data_bins[binnum]
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
-                weight = value if weighting == 'default' else 1
-                docmatrix[key[0] + coffset, key[1]] = weight
+                docmatrix[key[0] + coffset, key[1]] = value
             coffset += offsets[binnum]
     new_docs = [wordlist for i, wordlist in
                 sorted(new_docs.items(), key=lambda tup: tup[0])]
@@ -190,7 +198,7 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
 
 
 @enforce.runtime_validation
-def parse_docs(data: np.ndarray, words: dict, total_doc_count: int) -> dict:
+def parse_docs(data: np.ndarray, words: dict, total_doc_count: int, weight_func: typing.Any) -> dict:
     """
     Parallelize Sparse Matrix Calculation
 
@@ -207,19 +215,10 @@ def parse_docs(data: np.ndarray, words: dict, total_doc_count: int) -> dict:
     for i, doc in enumerate(data):
         for word in list(set(doc.split(' '))):
             if word != '':
-                docmatrix[(i, wordref[word])] = weight(total_doc_count,
-                                                       words[word]['doccount'],
-                                                       words[word]['freq'])
+                docmatrix[(i, wordref[word])] = weight_func(total_doc_count,
+                                                            words[word]['doccount'],
+                                                            words[word]['freq'])
     return docmatrix
-
-
-def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
-    """
-    Weighting function for Document Term Matrix.
-
-    tf-idf => https://en.wikipedia.org/wiki/Tf%E2%80%93idf
-    """
-    return math.log(total_doc_count / doccount) * wordfreq
 
 
 @enforce.runtime_validation
