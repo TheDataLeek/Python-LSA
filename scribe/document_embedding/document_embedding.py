@@ -6,12 +6,12 @@ Analyze embedding of documents in R^n space using paragraph vector algorithm
 
 import sys
 import argparse
-from .. import LSA
+from ..LSA.LSA import open_documents
 
 
 def main():
     filename = '../data/hillary/cleanhillary.txt'
-    docs = LSA.open_documents(filename, 10)
+    docs = open_documents(filename, 10)
     print(docs)
 
 
