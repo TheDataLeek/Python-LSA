@@ -1,1 +1,3 @@
-{}
+{
+  "tests/test_scribe.py": true
+}

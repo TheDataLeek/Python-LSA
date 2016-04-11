@@ -1,8 +1,9 @@
 #!/usr/bin/env python3.5
 
-import LSA
 import numpy as np
 import pytest
+
+from ..scribe.LSA import LSA
 
 WORKERS = 8
 

@@ -1,75 +1,16 @@
 #!/usr/bin/env python3
 
 
-"""
-Perform LSA on given set of text.
-
-See README.md for details
-"""
-
-
-import sys
 import re
 import math
-import time
-import argparse
 import concurrent.futures
-import logging
 import typing
 import numpy as np
 import scipy.io as scio
-import scipy.sparse.linalg as ssl
 from scipy.sparse import dok_matrix
 from scipy.sparse import dok
 from tqdm import tqdm
 import enforce
-
-
-def main():
-    logging.basicConfig(filename='LSA.log', level=logging.DEBUG)
-
-    logging.info('Program Start')
-    """ Manage Execution """
-    args = get_args()
-
-    logging.info('Program Arguments: {}'.format(str(args)))
-
-    documents, doccount = open_documents(args.filename, args.count)
-    print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
-    logging.info('Loaded Data. Time Elapsed: {}'.format(time.clock()))
-
-    words = get_unique_words(documents, args.workers)
-    wordcount = len(words.keys())
-    topwords = ','.join([w for w, s in sorted(words.items(),
-                                              key=lambda tup: -tup[1]['freq'])[:20]])
-
-    logging.info('Found Word Frequencies')
-    logging.info('{} Documents (m) by {} Unique Words (n)'.format(doccount, wordcount))
-    logging.info('Top 20 Most Frequent Words:{}'.format(topwords))
-    logging.info('Time Elapsed: {}'.format(time.clock()))
-
-    print(('Found Word Frequencies\n'
-           '\n{} Documents (m) by {} Unique Words (n)\n\n'
-           'Top 20 Most Frequent Words:{}\n'
-           'Time Elapsed: {}\n').format(doccount,
-                                        wordcount,
-                                        topwords,
-                                        time.clock()))
-
-    docmatrix, documents = get_sparse_matrix(documents, words, args.workers)
-    print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
-    logging.info('Calculated Sparse Matrix. Time Elapsed: {}'.format(time.clock()))
-
-    u, s, vt = ssl.svds(docmatrix.T, k=args.svdk)
-    print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
-    logging.info('Calculated SVD Decomposition. Time Elapsed: {}'.format(time.clock()))
-
-    if args.save:
-        output = {'u':u, 'd': np.diag(s), 'vt':vt,
-                    'documents': np.array(documents, dtype=object),
-                    'words': np.array(list(sorted(words.keys())), dtype=object)}
-        print('Saving U: {}, S: {}, V.T: {}'.format(u.shape, s.shape, vt.shape))
-        save_output(output)
 
 
 @enforce.runtime_validation
@@ -225,28 +166,3 @@ def parse_docs(data: np.ndarray, words: dict, total_doc_count: int, weight_func:
 def save_output(output: dict) -> None:
     scio.savemat('output.mat', output)
 
-
-@enforce.runtime_validation
-def get_args() -> argparse.Namespace:
-    """
-    Get Command line Arguments
-
-    :return: args
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-w', '--workers', type=int, default=32,
-                        help=('Number of workers to use for multiprocessing'))
-    parser.add_argument('-c', '--count', type=int, default=-1,
-                        help=('Number of documents to use from original set'))
-    parser.add_argument('-k', '--svdk', type=int, default=20,
-                        help=('SVD Degree'))
-    parser.add_argument('-f', '--filename', type=str, default='./data/jeopardy/jeopardy.csv',
-                        help=('File to use for analysis'))
-    parser.add_argument('-s', '--save', action='store_true', default=False,
-                        help=('Save output in .mat file.'))
-    args = parser.parse_args()
-    return args
-
-
-if __name__ == '__main__':
-    sys.exit(main())
