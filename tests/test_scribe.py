@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from ..scribe.LSA import LSA
+from scribe.LSA import LSA as LSA
 
 WORKERS = 8
 

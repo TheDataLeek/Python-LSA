@@ -1,12 +1,16 @@
 #!/usr/bin/env python3.5
 
 import sys
+import os
 import argparse
 import logging
 import enforce
+import time
+import numpy as np
+import scipy.sparse.linalg as ssl
 
-from .. import scribe
-from ..scribe import LSA
+sys.path.insert(0, os.path.abspath('..'))
+from scribe.LSA import LSA
 
 
 def main():
@@ -22,7 +26,7 @@ def main():
     print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
     logging.info('Loaded Data. Time Elapsed: {}'.format(time.clock()))
 
-    words = get_unique_words(documents, args.workers)
+    words = LSA.get_unique_words(documents, args.workers)
     wordcount = len(words.keys())
     topwords = ','.join([w for w, s in sorted(words.items(),
                                               key=lambda tup: -tup[1]['freq'])[:20]])
@@ -40,7 +44,7 @@ def main():
                                         topwords,
                                         time.clock()))
 
-    docmatrix, documents = get_sparse_matrix(documents, words, args.workers)
+    docmatrix, documents = LSA.get_sparse_matrix(documents, words, args.workers)
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
     logging.info('Calculated Sparse Matrix. Time Elapsed: {}'.format(time.clock()))
 
@@ -53,7 +57,7 @@ def main():
                   'documents': np.array(documents, dtype=object),
                   'words': np.array(list(sorted(words.keys())), dtype=object)}
         print('Saving U: {}, S: {}, V.T: {}'.format(u.shape, s.shape, vt.shape))
-        save_output(output)
+        LSA.save_output(output)
 
 
 @enforce.runtime_validation
@@ -70,7 +74,7 @@ def get_args() -> argparse.Namespace:
                         help=('Number of documents to use from original set'))
     parser.add_argument('-k', '--svdk', type=int, default=20,
                         help=('SVD Degree'))
-    parser.add_argument('-f', '--filename', type=str, default='./data/jeopardy/jeopardy.csv',
+    parser.add_argument('-f', '--filename', type=str, default='../data/jeopardy/jeopardy.csv',
                         help=('File to use for analysis'))
     parser.add_argument('-s', '--save', action='store_true', default=False,
                         help=('Save output in .mat file.'))
