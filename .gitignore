@@ -2,3 +2,5 @@
 .idea*
 *.mat
 *.log
+*__pycache__*
+*.cache*
