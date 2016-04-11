@@ -1,11 +1,18 @@
 #!/usr/bin/env python3.5
 
+"""
+Analyze embedding of documents in R^n space using paragraph vector algorithm
+"""
+
 import sys
 import argparse
+from .. import LSA
 
 
 def main():
     filename = '../data/hillary/cleanhillary.txt'
+    docs = LSA.open_documents(filename, 10)
+    print(docs)
 
 
 if __name__ == '__main__':
