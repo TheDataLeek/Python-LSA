@@ -12,3 +12,5 @@ def embedding():
     docs = LSA.open_documents(filename, 10)
     print(docs)
 
+    
+

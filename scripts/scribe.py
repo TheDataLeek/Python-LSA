@@ -11,9 +11,13 @@ import scipy.sparse.linalg as ssl
 
 sys.path.insert(0, os.path.abspath('..'))
 from scribe.LSA import LSA
+from scribe.document_embedding import document_embedding
 
 
 def main():
+    document_embedding.embedding()
+
+    return
     logging.basicConfig(filename='../logs/LSA.log', level=logging.DEBUG)
 
     logging.info('Program Start')
@@ -64,8 +68,6 @@ def main():
 def get_args() -> argparse.Namespace:
     """
     Get Command line Arguments
-
-    :return: args
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--workers', type=int, default=32,

@@ -3,4 +3,5 @@
 *.mat
 *.log
 *__pycache__*
-*.cache*
+*cache*
+*.ipynb_checkpoints*
