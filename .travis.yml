@@ -1,6 +1,13 @@
 language: python
 python: 3.5
 sudo: required
+before_install:
+  - "sudo apt-get install libblas3gf"
+  - "sudo apt-get install libblas-doc"
+  - "sudo apt-get install libblas-dev"
+  - "sudo apt-get install liblapack3gf"
+  - "sudo apt-get install liblapack-doc"
+  - "sudo apt-get install liblapack-dev"
 install:
     - "pip3.5 install -r requirements.txt"
 script: "py.test"
