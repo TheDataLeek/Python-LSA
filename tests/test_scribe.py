@@ -3,69 +3,42 @@
 import numpy as np
 import pytest
 
-from scribe.LSA import LSA as LSA
+from scribe.LSA.LSA import clean_text
+from scribe.LSA.LSA import unique_words
+from scribe.LSA.LSA import read_raw_docs
+from scribe.LSA.LSA import parse_docs
 
 WORKERS = 8
+
 
 class TestLSA(object):
     @pytest.fixture(scope='module')
     def docs(self):
         contents = 'foo\nbar biz boo\nbaz foo bar\nfoo bar'
-        documents = LSA.read_raw_docs(contents.split('\n'), -1)
+        documents = read_raw_docs(contents.split('\n'), -1)
         return documents
 
     @pytest.fixture(scope='module')
     def doclength(self, docs):
         return len(docs)
 
-    def test_unique_words(self, docs):
-        unique_words = LSA.unique_words(docs)
-        words = ['bar', 'baz', 'biz', 'boo', 'foo']
-        assert sorted(unique_words.keys()) == words
-
-    def test_sparse_matrix(self, docs, doclength):
-        """
-        Sparse matrix should be of form (transposed)
-
-            1 2 3 4
-        bar 0 1 1 1
-        baz 0 0 1 0
-        biz 0 1 0 0
-        boo 0 1 0 0
-        foo 1 0 1 1
-        """
-        words = LSA.get_unique_words(docs, WORKERS)
-        wordcount = len(words.keys())
-        alphawords = sorted(list(words.keys()))
-        docmatrix, newdocs = LSA.get_sparse_matrix(docs, words,
-                                                   WORKERS, weighting='freq')
-        assert np.array([docs[i] == newdocs[i, 0]
-                         for i in range(len(newdocs))]).all()
-        assert newdocs.shape[0] == len(docs)
-
-        # Transpose docmatrix
-        docmatrix = docmatrix.T
-
-        # first just make sure it's the right shape
-        assert docmatrix.shape == (wordcount, doclength)
-
-        # Now make sure it's the right shape
-        goodshape = np.array([[0, 1, 1, 1],
-                              [0, 0, 1, 0],
-                              [0, 1, 0, 0],
-                              [0, 1, 0, 0],
-                              [1, 0, 1, 1]])
-        try:
-            assert (docmatrix.todense() == goodshape).all()
-        except AssertionError:
-            print(docmatrix.todense())
-            raise
+    def test_cleaner(self):
+        assert clean_text('foo') == 'foo'
+        assert clean_text('~!f*&%o)!)!o{":?>') == 'foo'
+        assert clean_text('3240873245872345087foo123981304897345') == 'foo'
+        assert clean_text('foo bar') == 'foo bar'
+        assert clean_text('f234872034oo b3890ar0120') == 'foo bar'
+        assert clean_text('!@#():foo b&$:ar*&@%') == 'foo bar'
 
     def test_clean_text_word(self):
         word = '!@#*(&F)(O&!{}:"><ObAR1230875'
-        assert LSA.clean_text(word) == 'foobar'
+        assert clean_text(word) == 'foobar'
 
     def test_clean_text_sentence(self):
         sentence = '!@#*(&F) (O&!{}:"><O bAR123 testfoo0875'
-        assert LSA.clean_text(sentence) == 'f oo bar testfoo'
+        assert clean_text(sentence) == 'f oo bar testfoo'
 
+    def test_unique_words(self, docs):
+        unique_words_result = unique_words(docs)
+        words = ['bar', 'baz', 'biz', 'boo', 'foo']
+        assert sorted(unique_words_result.keys()) == words

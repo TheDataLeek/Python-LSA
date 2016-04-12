@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Library for (level 2 optimized) Latent Sentiment Analysis
+"""
+
 
 import re
 import math
@@ -16,7 +20,10 @@ import time
 import enforce
 
 
-def analyze(filename, workers, count, svdk, save):
+def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> None:
+    """
+    Manage analysis of document set
+    """
     documents, doccount = open_documents(filename, count)
     print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
     logging.info('Loaded Data. Time Elapsed: {}'.format(time.clock()))
@@ -43,7 +50,7 @@ def analyze(filename, workers, count, svdk, save):
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
     logging.info('Calculated Sparse Matrix. Time Elapsed: {}'.format(time.clock()))
 
-    u, s, vt, wordlist = matrix_comparison(docmatrix, svdk, words, np.array(documents, dtype=object))
+    u, s, vt, wordlist = matrix_comparison(docmatrix, svdk, words)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
     logging.info('Calculated SVD Decomposition. Time Elapsed: {}'.format(time.clock()))
 
@@ -179,7 +186,6 @@ def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
 def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weighting: typing.Any=weight) -> typing.Tuple[dok.dok_matrix, np.ndarray]:
     """
     Parallelize Sparse Matrix Calculation
-    # TODO: Add more weight options
 
     :documents: list of document strings
     :words: dictionary of word frequencies
@@ -215,13 +221,14 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
 
 
 @enforce.runtime_validation
-def parse_docs(data: np.ndarray, words: dict, total_doc_count: int, weight_func: typing.Any) -> dict:
+def parse_docs(data: np.ndarray, words: dict, doc_count: int, weight_func: typing.Any) -> dict:
     """
     Parallelize Sparse Matrix Calculation
 
     :data: list of document strings
     :words: dictionary of word frequencies
     :total_doc_count: total number of documents (for tf-idf)
+    :weight_func: weighting function for code
 
     :return: Basically sparse array with weighted values
     """
@@ -232,7 +239,7 @@ def parse_docs(data: np.ndarray, words: dict, total_doc_count: int, weight_func:
     for i, doc in enumerate(data):
         for word in list(set(doc.split(' '))):
             if word != '':
-                docmatrix[(i, wordref[word])] = weight_func(total_doc_count,
+                docmatrix[(i, wordref[word])] = weight_func(doc_count,
                                                             words[word]['doccount'],
                                                             words[word]['freq'])
     return docmatrix
