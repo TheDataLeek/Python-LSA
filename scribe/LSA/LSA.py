@@ -43,16 +43,53 @@ def analyze(filename, workers, count, svdk, save):
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
     logging.info('Calculated Sparse Matrix. Time Elapsed: {}'.format(time.clock()))
 
-    u, s, vt = ssl.svds(docmatrix.T, k=svdk)
+    u, s, vt, wordlist = matrix_comparison(docmatrix, svdk, words, np.array(documents, dtype=object))
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
     logging.info('Calculated SVD Decomposition. Time Elapsed: {}'.format(time.clock()))
 
     if save:
         output = {'u':u, 'd': np.diag(s), 'vt':vt,
                   'documents': np.array(documents, dtype=object),
-                  'words': np.array(list(sorted(words.keys())), dtype=object)}
+                  'words': wordlist}
         print('Saving U: {}, S: {}, V.T: {}'.format(u.shape, s.shape, vt.shape))
         save_output(output)
+
+
+def matrix_comparison(docmatrix, k, words, documents):
+    u, s, vt = ssl.svds(docmatrix.T, k=k)
+    wordlist = np.array(list(sorted(words.keys())), dtype=object)
+    d = np.diag(s)
+
+    num_docs = vt.shape[1]
+    num_words = u.shape[0]
+
+    word_mat = u @ d    # python 3.5 syntax for dot product
+    doc_mat = d @ vt
+
+    query = input('Enter the query word: ').lower()   # we can chain the lower()
+
+    index = -1
+    for i, word in enumerate(wordlist):  # Loog has runtime O(n)
+        if word == query:
+            index = i
+            break   # Breaks us out of loop so we don't need to iterate
+
+    if index == -1:   # If we didn't find word in the corpus, don't analyze
+        print('Invalid Word -- Not in Corpus')
+    else:
+        q = word_mat[index]
+
+        rank = np.zeros(num_docs)  # pre-initialize array for speed
+        for i in range(num_docs):
+            rank[i] = (doc_mat[:, i] @ q) / (np.linalg.norm(doc_mat[:, i]) * np.linalg.norm(q))
+
+        r = sorted(range(len(rank)), key=lambda k: rank[k])
+        print('\n')
+        print(documents[r[-1]])
+        print(documents[r[-2]])
+
+    return u, s, vt, wordlist
+
 
 @enforce.runtime_validation
 def open_documents(filename: str, size: int) -> typing.Tuple[np.ndarray, int]:
@@ -156,7 +193,7 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
     workers   = m if m < workers else workers
     data_bins = np.array_split(documents, workers)
     docmatrix = dok_matrix((m, n), dtype=float)
-    new_docs  = {}
+    new_docs  = np.empty(len(documents), dtype=object)
     offsets   = [len(data_bin) for data_bin in data_bins]
     coffset   = 0
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -168,14 +205,12 @@ def get_sparse_matrix(documents: np.ndarray, words: dict, workers: int, weightin
             binnum = futures[future]
             # Because order is not preserved in threads, we need to make sure we add
             # the documents back in the correct order.
-            new_docs[binnum] = data_bins[binnum]
+            for i, doc in enumerate(data_bins[binnum]):
+                new_docs[coffset + i] = doc
             # THIS IS THE BOTTLENECK
             for key, value in future.result().items():
                 docmatrix[key[0] + coffset, key[1]] = value
             coffset += offsets[binnum]
-    new_docs = [wordlist for i, wordlist in
-                sorted(new_docs.items(), key=lambda tup: tup[0])]
-    new_docs = np.array(new_docs, dtype=object)
     return docmatrix, new_docs
 
 
