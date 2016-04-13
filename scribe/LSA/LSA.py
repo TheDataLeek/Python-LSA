@@ -8,7 +8,6 @@ Library for (level 2 optimized) Latent Sentiment Analysis
 import re
 import math
 import concurrent.futures
-import logging
 import typing
 import numpy as np
 import scipy.io as scio
@@ -26,17 +25,11 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> N
     """
     documents, doccount = open_documents(filename, count)
     print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
-    logging.info('Loaded Data. Time Elapsed: {}'.format(time.clock()))
 
     words = get_unique_words(documents, workers)
     wordcount = len(words.keys())
     topwords = ','.join([w for w, s in sorted(words.items(),
                                               key=lambda tup: -tup[1]['freq'])[:20]])
-
-    logging.info('Found Word Frequencies')
-    logging.info('{} Documents (m) by {} Unique Words (n)'.format(doccount, wordcount))
-    logging.info('Top 20 Most Frequent Words:{}'.format(topwords))
-    logging.info('Time Elapsed: {}'.format(time.clock()))
 
     print(('Found Word Frequencies\n'
            '\n{} Documents (m) by {} Unique Words (n)\n\n'
@@ -48,11 +41,9 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> N
 
     docmatrix, documents = get_sparse_matrix(documents, words, workers)
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
-    logging.info('Calculated Sparse Matrix. Time Elapsed: {}'.format(time.clock()))
 
     u, s, vt, wordlist = matrix_comparison(docmatrix, svdk, words, documents)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
-    logging.info('Calculated SVD Decomposition. Time Elapsed: {}'.format(time.clock()))
 
     if save:
         output = {'u':u, 'd': np.diag(s), 'vt':vt,
