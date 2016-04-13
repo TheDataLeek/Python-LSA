@@ -50,7 +50,7 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> N
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
     logging.info('Calculated Sparse Matrix. Time Elapsed: {}'.format(time.clock()))
 
-    u, s, vt, wordlist = matrix_comparison(docmatrix, svdk, words)
+    u, s, vt, wordlist = matrix_comparison(docmatrix, svdk, words, documents)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
     logging.info('Calculated SVD Decomposition. Time Elapsed: {}'.format(time.clock()))
 
@@ -90,7 +90,7 @@ def matrix_comparison(docmatrix, k, words, documents):
         for i in range(num_docs):
             rank[i] = (doc_mat[:, i] @ q) / (np.linalg.norm(doc_mat[:, i]) * np.linalg.norm(q))
 
-        r = sorted(range(len(rank)), key=lambda k: rank[k])
+        r = sorted(range(len(rank)), key=lambda x: rank[x])
         print('\n')
         print(documents[r[-1]])
         print(documents[r[-2]])
@@ -115,13 +115,18 @@ def read_raw_docs(lines: list, size: int) -> np.ndarray:
     for i, line in enumerate(lines):
         if i >= size:
             break
-        documents[i] = clean_text(line)
+        documents[i] = str(clean_text(line))
     return documents
 
 
-@enforce.runtime_validation
 def clean_text(line: str) -> str:
     return re.sub('[^a-z ]+', '', line.lower())
+
+
+def clean_words(line: str) -> typing.Generator:
+    for word in clean_text(line).split(' '):
+        if word != '':
+            yield word
 
 
 @enforce.runtime_validation
