@@ -19,18 +19,40 @@ Notes about implementation:
         regressing on 'tiger'"
 """
 
+import os
 from ..LSA import LSA
 import random
 import typing
 import heapq
 import numpy as np
+import matplotlib.pyplot as plt
+import scipy.sparse.linalg as ssl
 
 
 def embedding(filename, workers):
-    train_percent = 0.25
-    train_data, test_data = get_data(filename, train_percent)
-    words, word_counts, wordcount = ordered_words(train_data)
-    encoding = Encoding(word_counts, wordcount)
+    #train_percent = 0.25
+    #train_data, test_data = get_data(filename, train_percent)
+    #words, word_counts, wordcount = ordered_words(train_data)
+    #encoding = Encoding(word_counts, wordcount)
+
+    if not os.path.isfile('embedding.npy'):
+        documents, doccount = LSA.open_documents(filename, -1)
+        words = LSA.get_unique_words(documents, workers)
+        docmatrix, documents = LSA.get_sparse_matrix(documents, words, workers)
+
+        u, s, vt = ssl.svds(docmatrix, k=3)
+
+        np.save('embedding.npy', u)
+    else:
+        u = np.load('embedding.npy')
+
+    plt.figure()
+    plt.scatter(u[:, 0], u[:, 1], c=u[:, 2])
+    plt.show()
+
+
+def softmax(words: list, word: int, input_word: int) -> float:
+    return 1
 
 
 def get_data(filename: str, train_percent: float):
@@ -48,18 +70,18 @@ def read_docs(filename: str) -> typing.Generator[str, str, str]:
 
 
 def ordered_words(docs: list):
-    words = {}
+    words = []
     word_counts = {}
     index = 0
     total_words = 0
     for doc in docs:
         for word in doc:
+            words.append(word)
             total_words += 1
             try:
                 word_counts[word] += 1
             except KeyError:
                 word_counts[word] = 1
-                words[word] = index
                 index += 1
     return words, word_counts, total_words
 
