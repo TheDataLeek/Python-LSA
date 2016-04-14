@@ -96,7 +96,7 @@ def doc_comparisons(docmatrix, k, documents):
     num_docs = vt.shape[1]
     doc_mat = d @ vt
 
-    query = input('Enter the document number you wish to query (between 1 and 1000)')
+    query = input('Enter the document number you wish to query (between 1 and 1000')
 
     index = -1
     if not documents[query]:
