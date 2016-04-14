@@ -3,7 +3,6 @@
 import sys
 import os
 import argparse
-import logging
 import enforce
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -12,12 +11,9 @@ from scribe.document_embedding import document_embedding
 
 
 def main():
-    logging.basicConfig(filename='../logs/LSA.log', level=logging.DEBUG)
-    logging.info('Program Start')
     """ Manage Execution """
     args = get_args()
     print(args)
-    logging.info('Program Arguments: {}'.format(str(args)))
 
     if args.embedding:
         document_embedding.embedding(args.filename, args.workers)

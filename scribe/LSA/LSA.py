@@ -42,20 +42,30 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> N
     docmatrix, documents = get_sparse_matrix(documents, words, workers)
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
 
-    u, s, vt, wordlist = matrix_comparison(docmatrix, svdk, words, documents)
+    u, s, vt = decomposition(docmatrix, svdk)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
-    if save:
-        output = {'u':u, 'd': np.diag(s), 'vt':vt,
-                  'documents': np.array(documents, dtype=object),
-                  'words': wordlist}
-        print('Saving U: {}, S: {}, V.T: {}'.format(u.shape, s.shape, vt.shape))
-        save_output(output)
+    while True:
+        try:
+            selection = input('(w)ords or (d)ocuments? ').lower()
+            if selection == 'w':
+                matrix_comparison(u, s, vt, words, documents)
+            elif selection == 'd':
+                doc_comparisons(u, s, vt, documents)
+            elif selection == 'exit':
+                break
+        except KeyboardInterrupt:
+            break
 
 
-def matrix_comparison(docmatrix, k, words, documents):
+def decomposition(docmatrix, k):
     u, s, vt = ssl.svds(docmatrix.T, k=k)
+    return u, s, vt
+
+
+def matrix_comparison(u, s, vt, words, documents):
     wordlist = np.array(list(sorted(words.keys())), dtype=object)
+    word_indices = {w:i for i, w in enumerate(wordlist)}
     d = np.diag(s)
 
     num_docs = vt.shape[1]
@@ -64,18 +74,20 @@ def matrix_comparison(docmatrix, k, words, documents):
     word_mat = u @ d    # python 3.5 syntax for dot product
     doc_mat = d @ vt
 
-    query = input('Enter the query word: ').lower()   # we can chain the lower()
+    query = [w for w in clean_text(input('Enter the query: ')).split(' ') if w != '']
 
-    index = -1
-    for i, word in enumerate(wordlist):  # Loog has runtime O(n)
-        if word == query:
-            index = i
-            break   # Breaks us out of loop so we don't need to iterate
+    indices = []
+    error = False
+    for word in query:
+        try:
+            indices.append(word_indices[word])
+        except KeyError:
+            print('Invalid Word: {} -- Not in Corpus'.format(word))
+            error = True
+            break
 
-    if index == -1:   # If we didn't find word in the corpus, don't analyze
-        print('Invalid Word -- Not in Corpus')
-    else:
-        q = word_mat[index]
+    if not error:
+        q = np.mean([word_mat[index] for index in indices], axis=0)
 
         rank = np.zeros(num_docs)  # pre-initialize array for speed
         for i in range(num_docs):
@@ -83,10 +95,38 @@ def matrix_comparison(docmatrix, k, words, documents):
 
         r = sorted(range(len(rank)), key=lambda x: rank[x])
         print('\n')
-        print(documents[r[-1]])
-        print(documents[r[-2]])
+        for i in range(-1, -5, -1):
+            print(documents[r[i]])
 
-    return u, s, vt, wordlist
+
+def doc_comparisons(u, s, vt, documents):
+    d = np.diag(s)
+    num_docs = vt.shape[1]
+    doc_mat = d @ vt
+
+    error = False
+
+    try:
+        query_str = 'Enter the document number you wish to query (between 0 and {} inclusive): '
+        index = int(input(query_str.format(len(documents) - 1)))
+        if index >= len(documents) or index < 0:
+            error = True
+        print('You Queried: {}'.format(documents[index]))
+    except ValueError:
+        print("Insert Valid Number")
+        error = True
+
+    if not error:
+        q = doc_mat[:, index]
+
+        rank = np.zeros(num_docs)
+        for i in range(num_docs):
+            rank[i] = (doc_mat[:, i] @ q) / (np.linalg.norm(doc_mat[:, i]) * np.linalg.norm(q))
+
+        r = sorted(range(len(rank)), key=lambda x: rank[x])
+        print('\n')
+        for i in range(-1, -5, -1):
+            print(documents[r[i]])
 
 
 @enforce.runtime_validation
@@ -239,9 +279,4 @@ def parse_docs(data: np.ndarray, words: dict, doc_count: int, weight_func: typin
                                                             words[word]['doccount'],
                                                             words[word]['freq'])
     return docmatrix
-
-
-@enforce.runtime_validation
-def save_output(output: dict) -> None:
-    scio.savemat('output.mat', output)
 
