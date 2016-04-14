@@ -118,7 +118,7 @@ def doc_comparisons(docmatrix, k, documents):
         print(documents[r[-1]])
         print(documents[r[-2]])
 
-    return u, s, vt, wordlist
+    return u, s, vt
 
 
 @enforce.runtime_validation
