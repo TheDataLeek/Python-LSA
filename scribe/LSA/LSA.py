@@ -10,13 +10,18 @@ import math
 import concurrent.futures
 import typing
 import numpy as np
-import scipy.io as scio
 from scipy.sparse import dok_matrix
 from scipy.sparse import dok
 import scipy.sparse.linalg as ssl
 from tqdm import tqdm
 import time
 import enforce
+from nltk.stem import SnowballStemmer
+from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
+from nltk.stem import LancasterStemmer
+from nltk.tokenize import TreebankWordTokenizer
+from nltk.tokenize import WhitespaceTokenizer
 
 
 def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> None:
@@ -74,7 +79,9 @@ def matrix_comparison(u, s, vt, words, documents):
     word_mat = u @ d    # python 3.5 syntax for dot product
     doc_mat = d @ vt
 
-    query = [w for w in clean_text(input('Enter the query: ')).split(' ') if w != '']
+    tokenizer = TreebankWordTokenizer()
+    stemmer = SnowballStemmer('english')
+    query = [w for w in clean_text(input('Enter the query: '), tokenizer, stemmer).split(' ') if w != '']
 
     indices = []
     error = False
@@ -143,15 +150,28 @@ def read_raw_docs(lines: list, size: int) -> np.ndarray:
     if size == -1:
         size = len(lines)
     documents = np.empty(size, dtype=object)
+    tokenizer = TreebankWordTokenizer()
+    stemmer = SnowballStemmer('english')
     for i, line in enumerate(lines):
         if i >= size:
             break
-        documents[i] = str(clean_text(line))
+        documents[i] = str(clean_text(line, tokenizer, stemmer))
     return documents
 
 
-def clean_text(line: str) -> str:
-    return re.sub('[^a-z ]+', '', line.lower())
+def clean_text(line: str, tokenizer: TreebankWordTokenizer, stemmer: SnowballStemmer) -> str:
+    """
+    This module is responsible for converting a document into a cleaned version using nltk
+    1. Tokenize using TreeBankTokenizer: http://www.nltk.org/api/nltk.tokenize.html#module-nltk.tokenize.treebank
+    2. Remove punctuation
+    3. Remove words that are 1-3 characters long
+    4. Stem using Snowball stemmer: http://www.nltk.org/howto/stem.html
+    5. Join back together
+    """
+    tokens = tokenizer.tokenize(line.lower())
+    stemmed_tokens = [stemmer.stem(w) for w in
+                      [re.sub('[^a-z0-9 ]+', '', word) for word in tokens] if len(w) > 3]
+    return ' '.join(stemmed_tokens)
 
 
 def clean_words(line: str) -> typing.Generator:
