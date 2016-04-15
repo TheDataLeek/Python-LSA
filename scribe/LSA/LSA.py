@@ -17,11 +17,7 @@ from tqdm import tqdm
 import time
 import enforce
 from nltk.stem import SnowballStemmer
-from nltk.stem import PorterStemmer
-from nltk.stem import WordNetLemmatizer
-from nltk.stem import LancasterStemmer
 from nltk.tokenize import TreebankWordTokenizer
-from nltk.tokenize import WhitespaceTokenizer
 
 
 def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> None:
