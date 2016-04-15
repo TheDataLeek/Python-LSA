@@ -147,12 +147,15 @@ def open_documents(filename: str, size: int) -> typing.Tuple[np.ndarray, int]:
 
 @enforce.runtime_validation
 def read_raw_docs(lines: list, size: int) -> np.ndarray:
+    """
+    TODO: Parallelize tokenizing
+    """
     if size == -1:
         size = len(lines)
     documents = np.empty(size, dtype=object)
     tokenizer = TreebankWordTokenizer()
     stemmer = SnowballStemmer('english')
-    for i, line in enumerate(lines):
+    for i, line in tqdm(enumerate(lines), total=size, leave=True, desc='Tokenizing Documents'):
         if i >= size:
             break
         documents[i] = str(clean_text(line, tokenizer, stemmer))
