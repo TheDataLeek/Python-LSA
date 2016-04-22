@@ -19,7 +19,7 @@ def main():
         document_embedding.embedding(args.filename, args.workers)
 
     if args.lsa:
-        LSA.analyze(args.filename, args.workers, args.count, args.svdk, args.save, args.print)
+        LSA.analyze(args.filename, args.workers, args.count, args.svdk, args.save, args.demo)
 
 
 @enforce.runtime_validation
@@ -38,7 +38,7 @@ def get_args() -> argparse.Namespace:
                         help=('File to use for analysis'))
     parser.add_argument('-s', '--save', action='store_true', default=False,
                         help=('Save output in .mat file.'))
-    parser.add_argument('-p', '--print', action='store_true', default=False,
+    parser.add_argument('-d', '--demo', action='store_true', default=False,
                         help=('Print all output. WARNING could be large...'))
     parser.add_argument('-emb', '--embedding', action='store_true', default=False,
                         help='Perform Document embedding and associated analysis')
