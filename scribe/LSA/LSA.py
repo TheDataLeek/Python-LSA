@@ -22,12 +22,18 @@ from nltk.stem import SnowballStemmer
 from nltk.tokenize import TreebankWordTokenizer
 
 
-def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> None:
+def analyze(filename: str, workers: int, count: int, svdk: int, save: bool, output: bool) -> None:
     """
     Manage analysis of document set
     """
     documents, doccount = open_documents(filename, count, workers)
     print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
+
+    if len(documents) > 100:
+        output = False
+
+    if output:
+        print(documents)
 
     words = get_unique_words(documents, workers)
     wordcount = len(words.keys())
@@ -42,8 +48,15 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> N
                                         topwords,
                                         time.clock()))
 
+    if output:
+        for word, freqs in words.items():
+            print('{} => {}'.format(word, freqs))
+
     docmatrix, documents = get_sparse_matrix(documents, words, workers)
     print('Calculated Sparse Matrix\nTime Elapsed: {}\n'.format(time.clock()))
+
+    if output:
+        print(docmatrix.todense())
 
     u, s, vt = decomposition(docmatrix, svdk)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
