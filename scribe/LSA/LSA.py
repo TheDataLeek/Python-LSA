@@ -122,7 +122,7 @@ def doc_comparisons(u, s, vt, documents):
         error = True
 
     try:
-        method = int(input("Enter 1 for Spearmans and 2 for Cosine Similarity"))
+        method = int(input("Enter 1 for Spearmans and 2 for Cosine Similarity: "))
         if method not in [1, 2]:
             raise ValueError
     except ValueError:
@@ -157,9 +157,6 @@ def open_documents(filename: str, size: int, workers: int) -> typing.Tuple[np.nd
 
 @enforce.runtime_validation
 def read_raw_docs(lines: list, size: int, workers: int) -> np.ndarray:
-    """
-    TODO: Parallelize tokenizing
-    """
     if size == -1:
         size = len(lines)
     lines = lines[:size]
