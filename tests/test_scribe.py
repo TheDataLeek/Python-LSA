@@ -12,7 +12,7 @@ class TestLSA(object):
     @pytest.fixture(scope='module')
     def docs(self):
         contents = 'fooffooo\nbarr bbbiiz bboooo\nbazzz fooffooo barr\nfooffooo barr'
-        documents = LSA.read_raw_docs(contents.split('\n'), -1)
+        documents = LSA.read_raw_docs(contents.split('\n'), -1, 1)
         return documents
 
     @pytest.fixture(scope='module')
@@ -29,12 +29,12 @@ class TestLSA(object):
 
     def test_cleaner(self, tokenizer, stemmer):
         test_clean = lambda x: LSA.clean_text(x, tokenizer, stemmer)
-        assert test_clean('fooo') == 'fooo'
-        assert test_clean('~!f*&%o)!)!oo{":?>') == ''
-        assert test_clean('32408732458 123981o304897345') == '32408732458 123981o304897345'
-        assert test_clean('foo bar') == ''
-        assert test_clean('f234872034ooo b3890ar0120') == 'f234872034ooo b3890ar0120'
-        assert test_clean('!@#():foo b&$:baar*&@%') == 'baar'
+        assert test_clean(['fooo']) == ['fooo']
+        assert test_clean(['~!f*&%o)!)!oo{":?>']) == ['']
+        assert test_clean(['32408732458 123981o304897345']) == ['32408732458 123981o304897345']
+        assert test_clean(['foo bar']) == ['']
+        assert test_clean(['f234872034ooo b3890ar0120']) == ['f234872034ooo b3890ar0120']
+        assert test_clean(['!@#():foo b&$:baar*&@%']) == ['baar']
 
     def test_unique_words(self, docs):
         unique_words_result = LSA.unique_words(docs)
