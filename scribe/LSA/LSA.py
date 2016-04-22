@@ -10,6 +10,8 @@ import math
 import concurrent.futures
 import typing
 import numpy as np
+from scipy import spatial
+import scipy.stats as sct
 from scipy.sparse import dok_matrix
 from scipy.sparse import dok
 import scipy.sparse.linalg as ssl
@@ -24,7 +26,7 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool) -> N
     """
     Manage analysis of document set
     """
-    documents, doccount = open_documents(filename, count)
+    documents, doccount = open_documents(filename, count, workers)
     print('Program Start. Loaded Data. Time Elapsed: {}\n'.format(time.clock()))
 
     words = get_unique_words(documents, workers)
@@ -119,12 +121,24 @@ def doc_comparisons(u, s, vt, documents):
         print("Insert Valid Number")
         error = True
 
+    try:
+        method = int(input("Enter 1 for Spearmans and 2 for Cosine Similarity"))
+        if method not in [1, 2]:
+            raise ValueError
+    except ValueError:
+        error = True
+
     if not error:
         q = doc_mat[:, index]
 
         rank = np.zeros(num_docs)
+        if method == 1:
+            distance_func = lambda a, b: sct.spearmanr(a, b)[0]
+        elif method == 2:
+            distance_func = lambda a, b: 1 - spatial.distance.cosine(a, b)
+
         for i in range(num_docs):
-            rank[i] = (doc_mat[:, i] @ q) / (np.linalg.norm(doc_mat[:, i]) * np.linalg.norm(q))
+            rank[i] = distance_func(doc_mat[:, i], q)
 
         r = sorted(range(len(rank)), key=lambda x: rank[x])
         print('\n')
@@ -133,32 +147,42 @@ def doc_comparisons(u, s, vt, documents):
 
 
 @enforce.runtime_validation
-def open_documents(filename: str, size: int) -> typing.Tuple[np.ndarray, int]:
+def open_documents(filename: str, size: int, workers: int) -> typing.Tuple[np.ndarray, int]:
     with open(filename, 'r') as datafile:
         lines = datafile.read().split('\n')
-        documents = read_raw_docs(lines, size)
+        documents = read_raw_docs(lines, size, workers)
     doccount = len(documents)
     return documents, doccount
 
 
 @enforce.runtime_validation
-def read_raw_docs(lines: list, size: int) -> np.ndarray:
+def read_raw_docs(lines: list, size: int, workers: int) -> np.ndarray:
     """
     TODO: Parallelize tokenizing
     """
     if size == -1:
         size = len(lines)
+    lines = lines[:size]
     documents = np.empty(size, dtype=object)
     tokenizer = TreebankWordTokenizer()
     stemmer = SnowballStemmer('english')
-    for i, line in tqdm(enumerate(lines), total=size, leave=True, desc='Tokenizing Documents'):
-        if i >= size:
-            break
-        documents[i] = str(clean_text(line, tokenizer, stemmer))
+    linebins = np.array_split(lines, workers)
+    offset = 0
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = {executor.submit(clean_text, linebins[i], tokenizer, stemmer):i
+                   for i in range(workers)}
+        for future in tqdm(concurrent.futures.as_completed(futures),
+                           desc='Tokenizing Documents', total=workers, leave=True):
+            index = futures[future]
+            for i, clean_line in enumerate(future.result()):
+                documents[offset + i] = clean_line
+            offset += len(future.result())
     return documents
 
 
-def clean_text(line: str, tokenizer: TreebankWordTokenizer, stemmer: SnowballStemmer) -> str:
+def clean_text(lines: np.ndarray,
+               tokenizer: TreebankWordTokenizer,
+               stemmer: SnowballStemmer) -> np.ndarray:
     """
     This module is responsible for converting a document into a cleaned version using nltk
     1. Tokenize using TreeBankTokenizer: http://www.nltk.org/api/nltk.tokenize.html#module-nltk.tokenize.treebank
@@ -167,16 +191,13 @@ def clean_text(line: str, tokenizer: TreebankWordTokenizer, stemmer: SnowballSte
     4. Stem using Snowball stemmer: http://www.nltk.org/howto/stem.html
     5. Join back together
     """
-    tokens = tokenizer.tokenize(line.lower())
-    stemmed_tokens = [stemmer.stem(w) for w in
-                      [re.sub('[^a-z0-9 ]+', '', word) for word in tokens] if len(w) > 3]
-    return ' '.join(stemmed_tokens)
-
-
-def clean_words(line: str) -> typing.Generator:
-    for word in clean_text(line).split(' '):
-        if word != '':
-            yield word
+    clean_lines = np.empty(len(lines), dtype=object)
+    for i, line in enumerate(lines):
+        tokens = tokenizer.tokenize(line.lower())
+        stemmed_tokens = [stemmer.stem(w) for w in
+                          [re.sub('[^a-z0-9 ]+', '', word) for word in tokens] if len(w) > 3]
+        clean_lines[i] = ' '.join(stemmed_tokens)
+    return clean_lines
 
 
 @enforce.runtime_validation
