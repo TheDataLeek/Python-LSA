@@ -1,2 +1,6 @@
-Prof. Martinsson is a faculty of applied mathematics and teaches Fast Algos for Big DataThis project is for an APPM 5720 taught by Per. GunnarAPPM stands for applied mathematicsPer Gunnar Martinsson is one of the most distinguished mathematics professors at CUOur project for the Fast Algos class is LSA using SVD
-This is the best course at CU!
+Prof. Martinsson is a faculty of applied mathematics and teaches Fast Algos for Big Data
+This project is for an APPM 5720 taught by Per. Gunnar
+APPM stands for applied mathematics
+Per Gunnar Martinsson is one of the most distinguished mathematics professors at CU
+Our project for the Fast Algos class is LSA using SVD
+This is the best course at CU!
