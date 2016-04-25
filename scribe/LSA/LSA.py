@@ -92,6 +92,7 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool, outp
 
 def decomposition(docmatrix, k):
     u, s, vt = ssl.svds(docmatrix.T, k=k)
+
     return u, s, vt
 
 
@@ -131,12 +132,13 @@ def matrix_comparison(u, s, vt, words, documents, output):
 
         r = sorted(range(len(rank)), key=lambda x: rank[x])
 
+        printfunc = lambda i: print('{}) {}\t{}'.format(np.abs(i), r[i], documents[r[i]]))
         if output:
             for i in range(-1, -len(r) - 1, -1):
-                print('{})\t{}'.format(np.abs(i), documents[r[i]]))
+                printfunc(i)
         else:
             for i in range(-1, -10, -1):
-                print('{})\t{}'.format(np.abs(i), documents[r[i]]))
+                printfunc(i)
 
 
 def doc_comparisons(u, s, vt, documents, output):
@@ -175,12 +177,13 @@ def doc_comparisons(u, s, vt, documents, output):
 
         r = sorted(range(len(rank)), key=lambda x: rank[x])
 
+        printfunc = lambda i: print('{}) {}\t{}'.format(np.abs(i), r[i], documents[r[i]]))
         if output:
             for i in range(-1, -len(r) - 1, -1):
-                print('{})\t{}'.format(np.abs(i), documents[r[i]]))
+                printfunc(i)
         else:
             for i in range(-1, -10, -1):
-                print('{})\t{}'.format(np.abs(i), documents[r[i]]))
+                printfunc(i)
 
 
 @enforce.runtime_validation
