@@ -277,17 +277,16 @@ def unique_words(data: np.ndarray) -> dict:
     :return: dictionary of word frequencies
     """
     words  = {}
-    olddoc = None
     for doc in data:
-        for word in doc.split(' '):
-            if word != '':
-                try:
-                    words[word]['freq'] += 1
-                    if doc != olddoc:
-                        words[word]['doccount'] += 1
-                except KeyError:
-                    words[word] = {'freq': 1, 'doccount': 1}
-        olddoc = doc
+        docwords_list = [w for w in doc.split(' ') if w != '']
+        docwords_set = set(docwords_list)
+        for word in docwords_list:
+            try:
+                words[word]['freq'] += 1
+            except KeyError:
+                words[word] = {'freq': 1, 'doccount': 0}
+        for word in docwords_set:
+            words[word]['doccount'] += 1
     return words
 
 
@@ -297,7 +296,7 @@ def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
 
     tf-idf => https://en.wikipedia.org/wiki/Tf%E2%80%93idf
     """
-    return math.log(total_doc_count / doccount) * wordfreq
+    return (1 + np.log(wordfreq)) * (np.log(total_doc_count / doccount))
 
 
 @enforce.runtime_validation
