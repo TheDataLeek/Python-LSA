@@ -32,9 +32,9 @@ class TestLSA(object):
         assert test_clean(['fooo']) == ['fooo']
         assert test_clean(['~!f*&%o)!)!oo{":?>']) == ['']
         assert test_clean(['32408732458 123981o304897345']) == ['32408732458 123981o304897345']
-        assert test_clean(['foo bar']) == ['']
+        assert test_clean(['foo bar']) == ['foo bar']
         assert test_clean(['f234872034ooo b3890ar0120']) == ['f234872034ooo b3890ar0120']
-        assert test_clean(['!@#():foo b&$:baar*&@%']) == ['baar']
+        assert test_clean(['!@#():foo b&$:baar*&@%']) == ['foo baar']
 
     def test_unique_words(self, docs):
         unique_words_result = LSA.unique_words(docs)
