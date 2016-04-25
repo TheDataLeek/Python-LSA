@@ -157,16 +157,12 @@ def doc_comparisons(u, s, vt, documents, output):
         error = True
 
     try:
-        method = int(input("Enter 1 for Spearmans and 2 for Cosine Similarity: "))
-        if method not in [1, 2]:
-            raise ValueError
+        method = int(input("Enter 1 for Spearmans and 2 for Cosine Similarity (2): "))
     except ValueError:
-        error = True
+        method = 2
 
     if not error:
         q = doc_mat[:, index]
-
-        print(q)
 
         rank = np.zeros(num_docs)
         if method == 1:
