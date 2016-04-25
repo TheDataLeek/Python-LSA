@@ -22,6 +22,9 @@ from nltk.stem import SnowballStemmer
 from nltk.tokenize import TreebankWordTokenizer
 
 
+np.set_printoptions(linewidth=160)
+
+
 def analyze(filename: str, workers: int, count: int, svdk: int, save: bool, output: bool) -> None:
     """
     Manage analysis of document set
@@ -57,7 +60,6 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool, outp
 
     if output:
         docs = docmatrix.T
-        print(docs.todense())
         comparisons = np.zeros((len(documents), len(documents)))
         for i in range(len(documents)):
             for j in range(len(documents)):
@@ -125,7 +127,7 @@ def matrix_comparison(u, s, vt, words, documents, output):
 
         rank = np.zeros(num_docs)  # pre-initialize array for speed
         for i in range(num_docs):
-            rank[i] = (doc_mat[:, i] @ q) / (np.linalg.norm(doc_mat[:, i]) * np.linalg.norm(q))
+            rank[i] = 1 - spatial.distance.cosine(doc_mat[:, i], q)
 
         r = sorted(range(len(rank)), key=lambda x: rank[x])
 
@@ -133,7 +135,7 @@ def matrix_comparison(u, s, vt, words, documents, output):
             for i in range(-1, -len(r) - 1, -1):
                 print('{})\t{}'.format(np.abs(i), documents[r[i]]))
         else:
-            for i in range(-1, -5, -1):
+            for i in range(-1, -10, -1):
                 print('{})\t{}'.format(np.abs(i), documents[r[i]]))
 
 
@@ -164,6 +166,8 @@ def doc_comparisons(u, s, vt, documents, output):
     if not error:
         q = doc_mat[:, index]
 
+        print(q)
+
         rank = np.zeros(num_docs)
         if method == 1:
             distance_func = lambda a, b: sct.spearmanr(a, b)[0]
@@ -179,7 +183,7 @@ def doc_comparisons(u, s, vt, documents, output):
             for i in range(-1, -len(r) - 1, -1):
                 print('{})\t{}'.format(np.abs(i), documents[r[i]]))
         else:
-            for i in range(-1, -5, -1):
+            for i in range(-1, -10, -1):
                 print('{})\t{}'.format(np.abs(i), documents[r[i]]))
 
 
@@ -228,8 +232,12 @@ def clean_text(lines: np.ndarray,
     clean_lines = np.empty(len(lines), dtype=object)
     for i, line in enumerate(lines):
         tokens = tokenizer.tokenize(line.lower())
-        stemmed_tokens = [stemmer.stem(w) for w in
-                          [re.sub('[^a-z0-9 ]+', '', word) for word in tokens] if len(w) > 2]
+        #stemmed_tokens = [stemmer.stem(w) for w in
+        #                  [re.sub('[^a-z0-9 ]+', '', word) for word in tokens]
+        #                  if len(w) > 2]
+        stemmed_tokens = [w for w in
+                          [re.sub('[^a-z0-9 ]+', '', word) for word in tokens]
+                          if len(w) > 2]
         clean_lines[i] = ' '.join(stemmed_tokens)
     return clean_lines
 
