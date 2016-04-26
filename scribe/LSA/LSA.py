@@ -20,6 +20,7 @@ import time
 import enforce
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import TreebankWordTokenizer
+from numba import jit
 
 
 np.set_printoptions(linewidth=160)
@@ -230,13 +231,8 @@ def clean_text(lines: np.ndarray,
     """
     clean_lines = np.empty(len(lines), dtype=object)
     for i, line in enumerate(lines):
-        tokens = tokenizer.tokenize(line.lower())
-        #stemmed_tokens = [stemmer.stem(w) for w in
-        #                  [re.sub('[^a-z0-9 ]+', '', word) for word in tokens]
-        #                  if len(w) > 2]
-        stemmed_tokens = [w for w in
-                          [re.sub('[^a-z0-9 ]+', '', word) for word in tokens]
-                          if len(w) > 2]
+        tokens = tokenizer.tokenize(re.sub('[^a-z0-9 ]+', ' ', line.lower()))
+        stemmed_tokens = [w for w in tokens if len(w) > 2]
         clean_lines[i] = ' '.join(stemmed_tokens)
     return clean_lines
 
@@ -266,7 +262,6 @@ def get_unique_words(documents: np.ndarray, workers: int) -> dict:
     return wordlist
 
 
-@enforce.runtime_validation
 def unique_words(data: np.ndarray) -> dict:
     """
     Finds unique word frequencies in documents
@@ -289,13 +284,14 @@ def unique_words(data: np.ndarray) -> dict:
     return words
 
 
+@jit
 def weight(total_doc_count: int, doccount: int, wordfreq: int) -> float:
     """
     Weighting function for Document Term Matrix.
 
     tf-idf => https://en.wikipedia.org/wiki/Tf%E2%80%93idf
     """
-    return (1 + np.log(wordfreq)) * (np.log(total_doc_count / doccount))
+    return (1 + math.log(wordfreq)) * (math.log(total_doc_count / doccount))
 
 
 @enforce.runtime_validation
