@@ -6,6 +6,8 @@ Library for (level 2 optimized) Latent Sentiment Analysis
 
 
 import re
+import gc
+import sys
 import math
 import concurrent.futures
 import typing
@@ -91,6 +93,7 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool, outp
             break
 
 
+@jit
 def decomposition(docmatrix, k):
     u, s, vt = ssl.svds(docmatrix.T, k=k)
 
@@ -190,7 +193,7 @@ def doc_comparisons(u, s, vt, documents, output):
 @enforce.runtime_validation
 def open_documents(filename: str, size: int, workers: int) -> typing.Tuple[np.ndarray, int]:
     with open(filename, 'r') as datafile:
-        lines = datafile.read().split('\n')[:-1]
+        lines = datafile.readlines()[:-1]
         documents = read_raw_docs(lines, size, workers)
     doccount = len(documents)
     return documents, doccount
@@ -202,36 +205,55 @@ def read_raw_docs(lines: list, size: int, workers: int) -> np.ndarray:
         size = len(lines)
     lines = lines[:size]
     documents = np.empty(size, dtype=object)
-    tokenizer = TreebankWordTokenizer()
-    stemmer = SnowballStemmer('english')
-    linebins = np.array_split(lines, workers)
-    offset = 0
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = {executor.submit(clean_text, linebins[i], tokenizer, stemmer):i
-                   for i in range(workers)}
-        for future in tqdm(concurrent.futures.as_completed(futures),
-                           desc='Tokenizing Documents', total=workers, leave=True):
-            index = futures[future]
-            for i, clean_line in enumerate(future.result()):
-                documents[offset + i] = clean_line
-            offset += len(future.result())
+    memory_impact = sum([sys.getsizeof(s) for s in lines])
+    # jeopardy 32862372
+    # recipes  187414159
+    if memory_impact < 50000000:
+        offset = 0
+        linebins = np.array_split(lines, workers)  # this is the offending large memory line
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = {executor.submit(clean_text, linebins[i]): i
+                       for i in range(workers)}
+            for future in tqdm(concurrent.futures.as_completed(futures),
+                               desc='Tokenizing Documents', total=workers, leave=True):
+                index = futures[future]
+                for i, line in enumerate(future.result()):
+                    documents[offset + i] = line
+                offset += len(future.result())
+    else:
+        print('Use Large Memory Algorithm')
+        offset = 0
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = {executor.submit(clean_line, lines[i]): i
+                       for i in range(size)}
+            for future in tqdm(concurrent.futures.as_completed(futures),
+                               desc='Tokenizing Documents', total=size, leave=True):
+                documents[offset] = future.result()
+                offset += 1
     return documents
 
 
-def clean_text(lines: np.ndarray,
-               tokenizer: TreebankWordTokenizer,
-               stemmer: SnowballStemmer) -> np.ndarray:
+def clean_line(line: str) -> str:
     """
     This module is responsible for converting a document into a cleaned version using nltk
-    1. Tokenize using TreeBankTokenizer: http://www.nltk.org/api/nltk.tokenize.html#module-nltk.tokenize.treebank
+    1. Tokenize using whitespace splitting
     2. Remove punctuation
     3. Remove words that are 1-3 characters long
-    4. Stem using Snowball stemmer: http://www.nltk.org/howto/stem.html
     5. Join back together
+    """
+    tokens = re.sub('[^a-z0-9 ]+', ' ', line.lower()).split(' ')
+    stemmed_tokens = [w for w in tokens if len(w) > 2]
+    return ' '.join(stemmed_tokens)
+
+
+def clean_text(lines: np.ndarray) -> np.ndarray:
+    """
+    This module is responsible for converting a document into a cleaned version using nltk.
+    Same as above except handles list of lines
     """
     clean_lines = np.empty(len(lines), dtype=object)
     for i, line in enumerate(lines):
-        tokens = tokenizer.tokenize(re.sub('[^a-z0-9 ]+', ' ', line.lower()))
+        tokens = re.sub('[^a-z0-9 ]+', ' ', line.lower()).split(' ')
         stemmed_tokens = [w for w in tokens if len(w) > 2]
         clean_lines[i] = ' '.join(stemmed_tokens)
     return clean_lines
