@@ -63,22 +63,22 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool, outp
 
     if output:
         docs = docmatrix.T
-        comparisons = np.zeros((len(documents), len(documents)))
+        beforecomparisons = np.zeros((len(documents), len(documents)))
         for i in range(len(documents)):
             for j in range(len(documents)):
-                comparisons[i, j] = 1 - spatial.distance.cosine(docs[:, i].todense(), docs[:, j].todense())
-        print(comparisons)
+                beforecomparisons[i, j] = 1 - spatial.distance.cosine(docs[:, i].todense(), docs[:, j].todense())
+        print(beforecomparisons)
 
     u, s, vt = decomposition(docmatrix, svdk)
     print('Calculated SVD Decomposition\nTime Elapsed: {}'.format(time.clock()))
 
     if output:
         docs = np.diag(s) @ vt
-        comparisons = np.zeros((len(documents), len(documents)))
+        aftercomparisons = np.zeros((len(documents), len(documents)))
         for i in range(len(documents)):
             for j in range(len(documents)):
-                comparisons[i, j] = 1 - spatial.distance.cosine(docs[:, i], docs[:, j])
-        print(comparisons)
+                aftercomparisons[i, j] = 1 - spatial.distance.cosine(docs[:, i], docs[:, j])
+        print(aftercomparisons)
 
     while True:
         try:
@@ -86,7 +86,7 @@ def analyze(filename: str, workers: int, count: int, svdk: int, save: bool, outp
             if selection == 'w':
                 matrix_comparison(u, s, vt, words, documents, output)
             elif selection == 'd':
-                doc_comparisons(u, s, vt, documents, output)
+                doc_comparisons(u, s, vt, documents, output, docmatrix.todense().T)
             elif selection == 'exit':
                 break
         except (KeyboardInterrupt, EOFError):
@@ -145,7 +145,7 @@ def matrix_comparison(u, s, vt, words, documents, output):
                 printfunc(i)
 
 
-def doc_comparisons(u, s, vt, documents, output):
+def doc_comparisons(u, s, vt, documents, output, docmatrix):
     d = np.diag(s)
     num_docs = vt.shape[1]
     doc_mat = d @ vt
@@ -179,15 +179,26 @@ def doc_comparisons(u, s, vt, documents, output):
         for i in range(num_docs):
             rank[i] = distance_func(doc_mat[:, i], q)
 
+        printfunc = lambda i, r, rank: print('{}) {} - {:.03f}\t{}'.format(np.abs(i), r[i], rank[r[i]], documents[r[i]]))
+
+        if output:
+            q1 = docmatrix[:, index]
+            rank1 = np.zeros(num_docs)
+            for i in range(num_docs):
+                rank1[i] = distance_func(docmatrix[:, i], q1)
+            r1 = sorted(range(len(rank1)), key=lambda x: rank1[x])
+            for i in range(-1, -len(r1) - 1, -1):
+                printfunc(i, r1, rank1)
+            print('---')
+
         r = sorted(range(len(rank)), key=lambda x: rank[x])
 
-        printfunc = lambda i: print('{}) {}\t{}'.format(np.abs(i), r[i], documents[r[i]]))
         if output:
             for i in range(-1, -len(r) - 1, -1):
-                printfunc(i)
+                printfunc(i, r, rank)
         else:
             for i in range(-1, -10, -1):
-                printfunc(i)
+                printfunc(i, r, rank)
 
 
 @enforce.runtime_validation
