@@ -13,6 +13,7 @@ matrix](https://en.wikipedia.org/wiki/Document-term_matrix), and then perform
 This document term matrix uses
 [tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) weighting.
 
+To Run! Set your `cwd` to `scripts/` and run the file located there.
 
 Notes to @rrish:
 * This actually does work for the entire jeopardy dataset, with all 200,000
