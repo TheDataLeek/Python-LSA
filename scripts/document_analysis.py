@@ -6,8 +6,8 @@ import argparse
 import enforce
 
 sys.path.insert(0, os.path.abspath('..'))
-from scribe.LSA import LSA
-from scribe.document_embedding import document_embedding
+from LSA.LSA import LSA
+from LSA.document_embedding import document_embedding
 
 
 def main():
