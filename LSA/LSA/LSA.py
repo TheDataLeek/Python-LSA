@@ -114,7 +114,7 @@ def matrix_comparison(u, s, vt, words, documents, output):
     tokenizer = TreebankWordTokenizer()
     stemmer = SnowballStemmer('english')
     query = [w for w in
-             clean_text([input('Enter the query: ')], tokenizer, stemmer)[0].split(' ')
+             clean_text([input('Enter the query: ')])[0].split(' ')
              if w != '']
 
     indices = []
@@ -257,7 +257,7 @@ def clean_line(line: str) -> str:
     return ' '.join(stemmed_tokens)
 
 
-def clean_text(lines: np.ndarray) -> np.ndarray:
+def clean_text(lines: np.ndarray, tokenizer=None, stemmer=None) -> np.ndarray:
     """
     This module is responsible for converting a document into a cleaned version using nltk.
     Same as above except handles list of lines

@@ -4,3 +4,4 @@ APPM stands for applied mathematics
 Per Gunnar Martinsson is one of the most distinguished mathematics professors at CU
 Our project for APPM 5720, the Fast Algos class is LSA using SVD
 Meatballs and Spaghetti are my favorite food.
+
