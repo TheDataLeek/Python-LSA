@@ -11,6 +11,7 @@ import sys
 import math
 import concurrent.futures
 import typing
+from typing import List
 import numpy as np
 from scipy import spatial
 import scipy.stats as sct
@@ -211,7 +212,7 @@ def open_documents(filename: str, size: int, workers: int) -> typing.Tuple[np.nd
 
 
 @enforce.runtime_validation
-def read_raw_docs(lines: list, size: int, workers: int) -> np.ndarray:
+def read_raw_docs(lines: List[str], size: int, workers: int) -> np.ndarray:
     if size == -1:
         size = len(lines)
     lines = lines[:size]
