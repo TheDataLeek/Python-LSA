@@ -4,7 +4,7 @@
 # matlab/LSA.py: 12
 # scribe/LSA/LSA.py: 12
 # scribe/document_embedding/document_embedding.py: 12
-numpy == 1.11.0
+numpy == 1.21.0
 
 # matlab/LSA.py: 13,14,15,16
 # scribe/LSA/LSA.py: 13,14,15,16,17
